@@ -1,18 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetFooter,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 import {
   Select,
   SelectContent,
@@ -47,7 +36,7 @@ function countActiveFacets(filters: CardFiltersState) {
 }
 
 // A long staleTime here is deliberate: team/set options only change when new
-// cards are ingested, so there's no need to re-fetch them on every panel open.
+// cards are ingested, so there's no need to re-fetch them on every mount.
 const FACET_OPTIONS_STALE_TIME = 5 * 60_000;
 
 export function CardFilters({
@@ -73,120 +62,95 @@ export function CardFilters({
   const activeCount = countActiveFacets(filters);
 
   return (
-    <Sheet>
-      <SheetTrigger render={<Button variant="outline" className="gap-1.5" />}>
-        <SlidersHorizontal className="size-4" />
-        Filters
-        {activeCount > 0 && (
-          <Badge variant="secondary" className="ml-0.5">
-            {activeCount}
-          </Badge>
-        )}
-      </SheetTrigger>
-      <SheetContent>
-        <SheetHeader>
-          <SheetTitle>Filters</SheetTitle>
-        </SheetHeader>
-        <div className="flex flex-col gap-4 overflow-y-auto px-4">
-          <div className="flex flex-col gap-1.5">
-            <Label>Rarity</Label>
-            <Select
-              value={filters.rarity ?? "all"}
-              onValueChange={(value) =>
-                onChange({
-                  ...filters,
-                  rarity: !value || value === "all" ? undefined : (value as Rarity),
-                })
-              }
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="All rarities" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All rarities</SelectItem>
-                {RARITY_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+    <div className="flex flex-wrap items-center gap-2">
+      <Select
+        value={filters.rarity ?? "all"}
+        onValueChange={(value) =>
+          onChange({
+            ...filters,
+            rarity: !value || value === "all" ? undefined : (value as Rarity),
+          })
+        }
+      >
+        <SelectTrigger size="sm" className="w-[130px]">
+          <SelectValue placeholder="All rarities" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All rarities</SelectItem>
+          {RARITY_OPTIONS.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
 
-          <div className="flex flex-col gap-1.5">
-            <Label>Position</Label>
-            <Select
-              value={filters.position ?? "all"}
-              onValueChange={(value) =>
-                onChange({ ...filters, position: !value || value === "all" ? undefined : value })
-              }
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="All positions" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All positions</SelectItem>
-                {POSITION_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+      <Select
+        value={filters.position ?? "all"}
+        onValueChange={(value) =>
+          onChange({ ...filters, position: !value || value === "all" ? undefined : value })
+        }
+      >
+        <SelectTrigger size="sm" className="w-[130px]">
+          <SelectValue placeholder="All positions" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All positions</SelectItem>
+          {POSITION_OPTIONS.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
 
-          <div className="flex flex-col gap-1.5">
-            <Label>Team</Label>
-            <Select
-              value={filters.team ?? "all"}
-              onValueChange={(value) =>
-                onChange({ ...filters, team: !value || value === "all" ? undefined : value })
-              }
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="All teams" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All teams</SelectItem>
-                {teams?.map((team) => (
-                  <SelectItem key={team} value={team}>
-                    {team}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+      <Select
+        value={filters.team ?? "all"}
+        onValueChange={(value) =>
+          onChange({ ...filters, team: !value || value === "all" ? undefined : value })
+        }
+      >
+        <SelectTrigger size="sm" className="w-[140px]">
+          <SelectValue placeholder="All teams" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All teams</SelectItem>
+          {teams?.map((team) => (
+            <SelectItem key={team} value={team}>
+              {team}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
 
-          <div className="flex flex-col gap-1.5">
-            <Label>Set</Label>
-            <Select
-              value={filters.setName ?? "all"}
-              onValueChange={(value) =>
-                onChange({ ...filters, setName: !value || value === "all" ? undefined : value })
-              }
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="All sets" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All sets</SelectItem>
-                {setNames?.map((setName) => (
-                  <SelectItem key={setName} value={setName}>
-                    {setName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        {activeCount > 0 && (
-          <SheetFooter>
-            <Button variant="ghost" onClick={() => onChange({ search: filters.search })}>
-              Clear filters
-            </Button>
-          </SheetFooter>
-        )}
-      </SheetContent>
-    </Sheet>
+      <Select
+        value={filters.setName ?? "all"}
+        onValueChange={(value) =>
+          onChange({ ...filters, setName: !value || value === "all" ? undefined : value })
+        }
+      >
+        <SelectTrigger size="sm" className="w-[140px]">
+          <SelectValue placeholder="All sets" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All sets</SelectItem>
+          {setNames?.map((setName) => (
+            <SelectItem key={setName} value={setName}>
+              {setName}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      {activeCount > 0 && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onChange({ search: filters.search })}
+        >
+          Clear filters
+        </Button>
+      )}
+    </div>
   );
 }

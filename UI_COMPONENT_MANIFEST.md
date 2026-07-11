@@ -9,7 +9,7 @@ infrastructure, not application UI. Everything else is hand-written for this app
 | Component | Purpose |
 |---|---|
 | `CardSearch.tsx` | Owns debounced search/filter state, renders `CardFilters` + `CardGrid` via `useCardsInfinite()`, plus a "Load more" button |
-| `CardFilters.tsx` | "Filters" button (with an active-count badge) opening a `Sheet` panel with Rarity/Position/Team/Set `<Select>`s; Team and Set options come from the `cards_distinct_teams`/`cards_distinct_set_names` RPCs |
+| `CardFilters.tsx` | Rarity/Position/Team/Set `<Select>`s rendered inline (wrapping row) next to the search box, plus a "Clear filters" button when any are active; Team and Set options come from the `cards_distinct_teams`/`cards_distinct_set_names` RPCs |
 | `CardGrid.tsx` | Responsive grid (2/3/4/5 columns by breakpoint) with loading skeletons (`CardGridSkeleton`) and empty state |
 | `CardTile.tsx` | Single card preview: image, OVR badge, name, team, rarity badge, price |
 
