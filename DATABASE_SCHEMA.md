@@ -6,6 +6,11 @@ Full SQL lives in `supabase/migrations/`, applied in order:
 2. `0002_rls_policies.sql` — Row Level Security policies
 3. `0003_fairness_config_seed.sql` — seeds the default fairness config
 4. `0004_realtime_publication.sql` — adds `messages` to `supabase_realtime`
+5. `0005_cards_composite_indexes.sql` — composite `(rarity, ovr_rating desc, id)` /
+   `(team, ovr_rating desc, id)` indexes for the `/cards` "Load more" query shape
+6. `0006_cards_filter_facets.sql` — `position`/`set_name` indexes (single-column and
+   composite, same pattern as 0005) plus `cards_distinct_teams()` /
+   `cards_distinct_set_names()` RPC functions backing the filter panel's Team/Set dropdowns
 
 All tables live in the `public` schema. `auth.users` is Supabase-managed.
 
@@ -60,8 +65,14 @@ Canonical card catalog — public read, service-role write only.
 | `attributes` | `jsonb` | flexible bag for extra stat breakdowns |
 | `created_at` / `updated_at` | `timestamptz` | |
 
-Indexes: `gin (name gin_trgm_ops)` (supports `ilike` search), plus btree on `rarity`, `ovr_rating`, `team`.
+Indexes: `gin (name gin_trgm_ops)` (supports `ilike` search); btree on `rarity`, `ovr_rating`,
+`team`, `position`, `set_name`; composite `(facet, ovr_rating desc, id)` on each of
+`rarity`/`team`/`position`/`set_name` for the `/cards` filtered-and-sorted "Load more" query shape.
 Requires the `pg_trgm` extension (enabled in the migration).
+
+RPC functions: `cards_distinct_teams()`, `cards_distinct_set_names()` — return the distinct
+non-null values of those free-text columns, used to populate the `/cards` filter panel's Team and
+Set dropdowns (`postgrest-js` has no `DISTINCT` support in its query builder).
 
 ### `inventory_items` ("Haves")
 | Column | Type | Notes |

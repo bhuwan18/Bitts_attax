@@ -473,6 +473,10 @@ export type Database = {
     Functions: {
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      // Hand-added ahead of `supabase gen types` regeneration — defined in
+      // supabase/migrations/0006_cards_filter_facets.sql, not yet applied.
+      cards_distinct_teams: { Args: never; Returns: { team: string }[] }
+      cards_distinct_set_names: { Args: never; Returns: { set_name: string }[] }
     }
     Enums: {
       [_ in never]: never

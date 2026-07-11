@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Serwist's generated service worker bundle (gitignored, see .gitignore) —
+    // present on disk after any local `npm run build`.
+    "public/sw.js",
+    "public/sw.js.map",
   ]),
 ]);
 

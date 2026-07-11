@@ -124,8 +124,9 @@ function parseCardBlock(
     position,
     // Plain numbered cards carry no cardtype label on this site — that's the actual base/common
     // tier, not an unrecognized rarity, so default explicitly rather than falling through to
-    // normalizeRarity's "other" bucket.
-    rarity: cardtype ?? "common",
+    // normalizeRarity's "other" bucket. Some pages render an empty cardtype cell (cardtype === ""
+    // rather than absent) — treat that the same way.
+    rarity: cardtype || "common",
     ovr_rating,
     base_price: price,
     image_url,

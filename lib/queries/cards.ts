@@ -1,14 +1,17 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
-import type { Card, Rarity } from "@/lib/types/database.types";
+import {
+  cardsInfiniteQueryKey,
+  fetchCardsPage,
+  getNextCardsPageParam,
+  type CardFilters,
+  type CardListItem,
+} from "@/lib/queries/cardsShared";
+import type { Card } from "@/lib/types/database.types";
 
-export interface CardFilters {
-  search?: string;
-  rarity?: Rarity;
-  team?: string;
-}
+export type { CardFilters, CardListItem };
 
 export function useCards(filters: CardFilters = {}) {
   const supabase = useSupabase();
@@ -32,6 +35,17 @@ export function useCards(filters: CardFilters = {}) {
       if (error) throw error;
       return data ?? [];
     },
+  });
+}
+
+export function useCardsInfinite(filters: CardFilters = {}) {
+  const supabase = useSupabase();
+
+  return useInfiniteQuery({
+    queryKey: cardsInfiniteQueryKey(filters),
+    queryFn: ({ pageParam }) => fetchCardsPage(supabase, filters, pageParam),
+    initialPageParam: 0,
+    getNextPageParam: getNextCardsPageParam,
   });
 }
 

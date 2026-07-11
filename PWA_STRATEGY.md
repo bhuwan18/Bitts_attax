@@ -62,7 +62,7 @@ The guiding principle: **cache what's safe to serve stale, never fake what requi
 | Route / asset | Strategy | Why |
 |---|---|---|
 | `/cards`, `/cards/[cardId]` | `StaleWhileRevalidate` | Read-only reference catalog that changes rarely — the natural offline win |
-| Card images (cross-origin) | `CacheFirst`, 30-day expiry, 300-entry cap | Static assets, safe to cache aggressively |
+| Card images | `CacheFirst`, 30-day expiry, 300-entry cap | Static assets, safe to cache aggressively — matched by `request.destination === "image"`, which covers same-origin `next/image` (`/_next/image?...`) requests, the actual runtime shape for card art in this app |
 | `/inventory`, `/trades`, `/api/*` | `NetworkOnly` | Require a live session and/or Realtime; **no background-sync write queue in this version** — writes made offline are simply not attempted, not silently queued |
 | Everything else | Serwist's `defaultCache` (Next.js's recommended precache/runtime rules for static assets, fonts, RSC payloads) | |
 | Navigation fallback | `/offline` page | Shown when a document request fails with no network and nothing cached |

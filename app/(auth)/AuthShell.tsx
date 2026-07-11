@@ -2,6 +2,7 @@ import type { ReactNode, CSSProperties } from "react";
 import Link from "next/link";
 import { ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Logo } from "@/components/shared/Logo";
 
 export function AuthShell({
   title,
@@ -28,7 +29,11 @@ export function AuthShell({
         />
         <div className="relative z-10 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
           <div className="flex flex-col gap-3">
-            <Link href="/cards" className="font-heading text-lg font-extrabold tracking-tight uppercase">
+            <Link
+              href="/cards"
+              className="flex items-center gap-2 font-heading text-lg font-extrabold tracking-tight uppercase"
+            >
+              <Logo className="size-5" />
               Bitts Attax
             </Link>
             <p className="font-heading text-3xl leading-[0.95] font-extrabold tracking-tight uppercase sm:text-4xl">
@@ -53,7 +58,11 @@ export function AuthShell({
           }}
         />
 
-        <Link href="/cards" className="relative z-10 font-heading text-xl font-extrabold tracking-tight uppercase">
+        <Link
+          href="/cards"
+          className="relative z-10 flex items-center gap-2 font-heading text-xl font-extrabold tracking-tight uppercase"
+        >
+          <Logo className="size-6" />
           Bitts Attax
         </Link>
 

@@ -8,12 +8,14 @@ infrastructure, not application UI. Everything else is hand-written for this app
 
 | Component | Purpose |
 |---|---|
-| `CardSearch.tsx` | Owns search/filter state, renders `CardFilters` + `CardGrid` via `useCards()` |
-| `CardFilters.tsx` | Rarity `<Select>` filter |
-| `CardGrid.tsx` | Responsive grid (2/3/4/5 columns by breakpoint) with loading skeletons and empty state |
+| `CardSearch.tsx` | Owns debounced search/filter state, renders `CardFilters` + `CardGrid` via `useCardsInfinite()`, plus a "Load more" button |
+| `CardFilters.tsx` | "Filters" button (with an active-count badge) opening a `Sheet` panel with Rarity/Position/Team/Set `<Select>`s; Team and Set options come from the `cards_distinct_teams`/`cards_distinct_set_names` RPCs |
+| `CardGrid.tsx` | Responsive grid (2/3/4/5 columns by breakpoint) with loading skeletons (`CardGridSkeleton`) and empty state |
 | `CardTile.tsx` | Single card preview: image, OVR badge, name, team, rarity badge, price |
 
-Used by: `app/(main)/cards/page.tsx` (browse), `app/(main)/cards/[cardId]/page.tsx` (detail, server-rendered).
+Used by: `app/(main)/cards/page.tsx` (browse — server-rendered, prefetches the first page and
+hydrates `CardSearch`'s TanStack Query cache), `app/(main)/cards/[cardId]/page.tsx` (detail,
+server-rendered).
 
 ## Inventory (`components/inventory/`)
 
@@ -75,7 +77,7 @@ Both wrap the entire app in `app/layout.tsx`, alongside Shadcn's `TooltipProvide
 
 Not components, but the client-side data layer every component above depends on:
 
-- `lib/queries/cards.ts` — `useCards(filters)`, `useCard(id)`
+- `lib/queries/cards.ts` — `useCards(filters)` (used by `HaveWantPicker`/`CardPicker`), `useCard(id)`, `useCardsInfinite(filters)` (used by `CardSearch`, paginated via `lib/queries/cardsShared.ts`)
 - `lib/queries/inventory.ts` — `useInventory()`, `useWantList()`, plus mutation hooks wrapping each Server Action
 - `lib/queries/trades.ts` — `useTradeListings()`, `useTrade(tradeId)`
 - `lib/queries/messages.ts` — `useMessages(tradeId)`, `useSendMessage(tradeId)`

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/nav/ThemeToggle";
+import { Logo } from "@/components/shared/Logo";
 
 const NAV_ITEMS = [
   { href: "/cards", label: "Cards" },
@@ -20,8 +21,9 @@ export function DesktopHeader() {
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-8 px-6">
         <Link
           href="/cards"
-          className="font-heading text-2xl font-extrabold tracking-tight uppercase"
+          className="flex items-center gap-2 font-heading text-2xl font-extrabold tracking-tight uppercase"
         >
+          <Logo className="size-7 text-primary" />
           Bitts <span className="text-primary">Attax</span>
         </Link>
         <nav className="flex h-full flex-1 items-center gap-1">

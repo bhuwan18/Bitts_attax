@@ -2,9 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { RARITY_LABEL, RARITY_STYLE, FOIL_RARITIES } from "@/lib/cards/rarity";
-import type { Card } from "@/lib/types/database.types";
+import type { CardListItem } from "@/lib/queries/cardsShared";
 
-export function CardTile({ card }: { card: Card }) {
+export function CardTile({ card, priority = false }: { card: CardListItem; priority?: boolean }) {
   const foil = FOIL_RARITIES.has(card.rarity);
 
   return (
@@ -23,6 +23,7 @@ export function CardTile({ card }: { card: Card }) {
               fill
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 200px"
               className="object-cover"
+              priority={priority}
             />
           ) : (
             <div className="flex h-full items-center justify-center text-xs text-muted-foreground">

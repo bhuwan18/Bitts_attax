@@ -28,8 +28,13 @@ const serwist = new Serwist({
       handler: new StaleWhileRevalidate({ cacheName: "cards-pages" }),
     },
     {
-      matcher: ({ url, sameOrigin }) =>
-        !sameOrigin && /\.(?:png|jpg|jpeg|webp|gif|svg)$/.test(url.pathname),
+      // request.destination === "image" catches same-origin next/image
+      // (/_next/image?url=...) requests — the actual runtime shape for
+      // every card image in this app — not just true cross-origin <img>
+      // URLs. Must precede ...defaultCache (below), which has its own
+      // weaker /_next/image rule (StaleWhileRevalidate, 24h, 64 entries)
+      // that was silently winning before this change.
+      matcher: ({ request }) => request.destination === "image",
       handler: new CacheFirst({
         cacheName: "card-images",
         plugins: [new ExpirationPlugin({ maxEntries: 300, maxAgeSeconds: 30 * 24 * 60 * 60 })],
