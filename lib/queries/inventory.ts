@@ -15,6 +15,7 @@ export interface InventoryItemWithCard {
   id: string;
   quantity: number;
   condition: string | null;
+  custom_image_url: string | null;
   card: Card;
 }
 
@@ -32,7 +33,7 @@ export function useInventory() {
     queryFn: async (): Promise<InventoryItemWithCard[]> => {
       const { data, error } = await supabase
         .from("inventory_items")
-        .select("id, quantity, condition, card:cards(*)")
+        .select("id, quantity, condition, custom_image_url, card:cards(*)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as unknown as InventoryItemWithCard[];
@@ -67,8 +68,15 @@ function useInvalidateInventory() {
 export function useAddToInventory() {
   const invalidate = useInvalidateInventory();
   return useMutation({
-    mutationFn: ({ cardId, quantity }: { cardId: string; quantity?: number }) =>
-      addToInventory(cardId, quantity),
+    mutationFn: ({
+      cardId,
+      quantity,
+      image,
+    }: {
+      cardId: string;
+      quantity?: number;
+      image?: File | null;
+    }) => addToInventory(cardId, quantity, image),
     onSuccess: invalidate,
   });
 }

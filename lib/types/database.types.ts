@@ -12,6 +12,9 @@ export type Rarity =
   | "limited"
   | "other"
 
+// Mirrors the `profiles.role` check constraint in supabase/migrations/0007_admin_role.sql.
+export type UserRole = "user" | "admin"
+
 export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
@@ -137,6 +140,7 @@ export type Database = {
           card_id: string
           condition: string | null
           created_at: string
+          custom_image_url: string | null
           id: string
           notes: string | null
           quantity: number
@@ -147,6 +151,7 @@ export type Database = {
           card_id: string
           condition?: string | null
           created_at?: string
+          custom_image_url?: string | null
           id?: string
           notes?: string | null
           quantity?: number
@@ -157,6 +162,7 @@ export type Database = {
           card_id?: string
           condition?: string | null
           created_at?: string
+          custom_image_url?: string | null
           id?: string
           notes?: string | null
           quantity?: number
@@ -225,6 +231,7 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          role: string
           updated_at: string
           username: string
         }
@@ -233,6 +240,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id: string
+          role?: string
           updated_at?: string
           username: string
         }
@@ -241,6 +249,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          role?: string
           updated_at?: string
           username?: string
         }

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/nav/ThemeToggle";
 import { Logo } from "@/components/shared/Logo";
+import { useCurrentProfile } from "@/lib/queries/auth";
 
 const NAV_ITEMS = [
   { href: "/cards", label: "Cards" },
@@ -15,6 +16,9 @@ const NAV_ITEMS = [
 
 export function DesktopHeader() {
   const pathname = usePathname();
+  const { data: profile } = useCurrentProfile();
+  const navItems =
+    profile?.role === "admin" ? [...NAV_ITEMS, { href: "/admin", label: "Admin" }] : NAV_ITEMS;
 
   return (
     <header className="sticky top-0 z-40 hidden border-b border-border/80 bg-background/90 backdrop-blur-lg md:block">
@@ -27,7 +31,7 @@ export function DesktopHeader() {
           Bitts <span className="text-primary">Attax</span>
         </Link>
         <nav className="flex h-full flex-1 items-center gap-1">
-          {NAV_ITEMS.map(({ href, label }) => {
+          {navItems.map(({ href, label }) => {
             const active = pathname.startsWith(href);
             return (
               <Link

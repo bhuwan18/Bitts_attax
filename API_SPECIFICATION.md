@@ -14,9 +14,17 @@ beyond "query the table, RLS decides what you see."
 
 ## Inventory (`app/(main)/inventory/actions.ts`)
 
-### `addToInventory(cardId: string, quantity = 1): Promise<void>`
+### `addToInventory(cardId: string, quantity = 1, image?: File | null): Promise<void>`
 Upserts an `inventory_items` row for the current user (unique on `user_id, card_id`, so re-adding a
-card updates its quantity instead of duplicating). Requires auth. Revalidates `/inventory`.
+card updates its quantity instead of duplicating). Requires auth. Revalidates `/inventory` and
+`/cards/[cardId]`.
+
+If `image` is passed, it's validated (≤8MB, `image/jpeg|png|webp|heic|heif`) and uploaded to the
+`card-images` storage bucket under the caller's own folder (`{user.id}/{card_id}-{timestamp}.{ext}`,
+enforced by storage RLS — see [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md#storage)), and its public
+URL is written to `custom_image_url` on the row. Omitting `image` (`undefined`) leaves whatever
+`custom_image_url` is already stored untouched — re-adding an already-owned card without picking a
+new photo doesn't wipe a previously uploaded one.
 
 ### `updateInventoryQuantity(itemId: string, quantity: number): Promise<void>`
 Updates the quantity on an existing inventory row. `quantity` validated 1–999. RLS restricts this
@@ -107,6 +115,25 @@ Handled directly by the Supabase client SDK, not custom Server Actions:
 - `supabase.auth.signOut()` — `components/nav/LogoutButton.tsx`
 - `GET /auth/callback` (`app/(auth)/auth/callback/route.ts`) — exchanges the magic-link/signup
   confirmation `code` for a session, then redirects into the app.
+
+## Admin (`app/(main)/admin/`)
+
+Read-only — there are no admin Server Actions, only reads gated two ways:
+
+1. `app/(main)/admin/layout.tsx` calls `getCurrentProfile()` (`lib/auth/admin.ts`), which
+   re-derives identity via `supabase.auth.getUser()` then loads that user's `profiles.role`;
+   anyone whose role isn't `'admin'` is redirected to `/cards`.
+2. Independently, the admin-only `select` RLS policies added in
+   `supabase/migrations/0007_admin_role.sql` (`inventory_items`, `want_items`, `trades`,
+   `trade_items`) mean the underlying queries return data for admins and nothing extra for
+   everyone else — so the page guard above is a UX nicety, not the actual security boundary.
+
+`lib/queries/admin.ts` exposes `useAdminUsers()`, `useAdminRecentTrades(limit?)`, and
+`useAdminUserActivity(userId)` (that user's inventory, want-list, and trades) — see
+[UI_COMPONENT_MANIFEST.md](./UI_COMPONENT_MANIFEST.md) for the pages/components built on them.
+
+Promoting a user to `role = 'admin'` is a manual SQL step (documented in the migration), not a
+Server Action — there is intentionally no self-serve promotion UI.
 
 ## Data ingestion (not a runtime API)
 

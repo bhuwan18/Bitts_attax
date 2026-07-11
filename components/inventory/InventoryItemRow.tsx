@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { QuantityStepper } from "@/components/shared/QuantityStepper";
 import type { InventoryItemWithCard } from "@/lib/queries/inventory";
 
@@ -15,11 +16,19 @@ export function InventoryItemRow({
   onUpdateQuantity: (quantity: number) => void;
   onRemove: () => void;
 }) {
+  const imageUrl = item.custom_image_url ?? item.card.image_url;
+
   return (
     <div className="flex items-center gap-3 rounded-xl bg-card p-2 ring-1 ring-border">
       <div className="clip-corner-sm relative size-14 shrink-0 overflow-hidden bg-muted">
-        {item.card.image_url && (
-          <Image src={item.card.image_url} alt={item.card.name} fill className="object-cover" />
+        {imageUrl && <Image src={imageUrl} alt={item.card.name} fill className="object-cover" />}
+        {item.custom_image_url && (
+          <Badge
+            variant="secondary"
+            className="absolute bottom-0 left-0 h-auto rounded-none rounded-tr-md px-1 py-0 text-[9px] leading-tight"
+          >
+            Your photo
+          </Badge>
         )}
       </div>
       <div className="min-w-0 flex-1">

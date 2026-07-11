@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import {
   Select,
   SelectContent,
@@ -18,6 +19,8 @@ import {
   type CardFilters as CardFiltersState,
 } from "@/lib/queries/cardsShared";
 import { POSITION_OPTIONS } from "@/lib/cards/position";
+import { RARITY_STYLE } from "@/lib/cards/rarity";
+import { cn } from "@/lib/utils";
 import type { Rarity } from "@/lib/types/database.types";
 
 const RARITY_OPTIONS: { value: Rarity; label: string }[] = [
@@ -38,6 +41,33 @@ function countActiveFacets(filters: CardFiltersState) {
 // A long staleTime here is deliberate: team/set options only change when new
 // cards are ingested, so there's no need to re-fetch them on every mount.
 const FACET_OPTIONS_STALE_TIME = 5 * 60_000;
+
+function FilterPill({
+  active,
+  activeClassName,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  activeClassName?: string;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap transition-colors",
+        active
+          ? cn("ring-2 ring-foreground/50", activeClassName ?? "bg-primary text-primary-foreground")
+          : "bg-background text-muted-foreground ring-1 ring-border hover:bg-muted hover:text-foreground"
+      )}
+    >
+      {children}
+    </button>
+  );
+}
 
 export function CardFilters({
   filters,
@@ -63,46 +93,53 @@ export function CardFilters({
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <Select
-        value={filters.rarity ?? "all"}
-        onValueChange={(value) =>
-          onChange({
-            ...filters,
-            rarity: !value || value === "all" ? undefined : (value as Rarity),
-          })
-        }
-      >
-        <SelectTrigger size="sm" className="w-[130px]">
-          <SelectValue placeholder="All rarities" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">All rarities</SelectItem>
-          {RARITY_OPTIONS.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <div className="flex flex-wrap items-center gap-1.5">
+        <FilterPill active={!filters.rarity} onClick={() => onChange({ ...filters, rarity: undefined })}>
+          All
+        </FilterPill>
+        {RARITY_OPTIONS.map((option) => (
+          <FilterPill
+            key={option.value}
+            active={filters.rarity === option.value}
+            activeClassName={RARITY_STYLE[option.value]}
+            onClick={() =>
+              onChange({
+                ...filters,
+                rarity: filters.rarity === option.value ? undefined : option.value,
+              })
+            }
+          >
+            {option.label}
+          </FilterPill>
+        ))}
+      </div>
 
-      <Select
-        value={filters.position ?? "all"}
-        onValueChange={(value) =>
-          onChange({ ...filters, position: !value || value === "all" ? undefined : value })
-        }
-      >
-        <SelectTrigger size="sm" className="w-[130px]">
-          <SelectValue placeholder="All positions" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">All positions</SelectItem>
-          {POSITION_OPTIONS.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <Separator orientation="vertical" className="h-5" />
+
+      <div className="flex flex-wrap items-center gap-1.5">
+        <FilterPill
+          active={!filters.position}
+          onClick={() => onChange({ ...filters, position: undefined })}
+        >
+          All
+        </FilterPill>
+        {POSITION_OPTIONS.map((option) => (
+          <FilterPill
+            key={option.value}
+            active={filters.position === option.value}
+            onClick={() =>
+              onChange({
+                ...filters,
+                position: filters.position === option.value ? undefined : option.value,
+              })
+            }
+          >
+            {option.value}
+          </FilterPill>
+        ))}
+      </div>
+
+      <Separator orientation="vertical" className="h-5" />
 
       <Select
         value={filters.team ?? "all"}
@@ -143,11 +180,7 @@ export function CardFilters({
       </Select>
 
       {activeCount > 0 && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onChange({ search: filters.search })}
-        >
+        <Button variant="ghost" size="sm" onClick={() => onChange({ search: filters.search })}>
           Clear filters
         </Button>
       )}

@@ -5,6 +5,9 @@ import { notFound } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { RARITY_LABEL, RARITY_STYLE, FOIL_RARITIES } from "@/lib/cards/rarity";
 import { createClient } from "@/lib/supabase/server";
+import { AddToInventoryDialog } from "@/components/cards/AddToInventoryDialog";
+import { Badge } from "@/components/ui/badge";
+import { StatStrip } from "@/components/shared/StatStrip";
 
 export default async function CardDetailPage({
   params,
@@ -17,7 +20,21 @@ export default async function CardDetailPage({
 
   if (!card) notFound();
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { data: existingItem } = user
+    ? await supabase
+        .from("inventory_items")
+        .select("id, quantity, custom_image_url")
+        .eq("card_id", cardId)
+        .eq("user_id", user.id)
+        .maybeSingle()
+    : { data: null };
+
   const foil = FOIL_RARITIES.has(card.rarity);
+  const heroImageUrl = existingItem?.custom_image_url ?? card.image_url;
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6 p-4 sm:p-6">
@@ -36,8 +53,8 @@ export default async function CardDetailPage({
             foil && "foil-sheen"
           )}
         >
-          {card.image_url ? (
-            <Image src={card.image_url} alt={card.name} fill className="object-cover" />
+          {heroImageUrl ? (
+            <Image src={heroImageUrl} alt={card.name} fill className="object-cover" />
           ) : (
             <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
               No image
@@ -47,6 +64,11 @@ export default async function CardDetailPage({
             <div className="clip-corner-sm absolute top-0 left-0 bg-foreground/85 px-3 py-1.5 font-heading text-2xl leading-none font-extrabold text-background backdrop-blur-sm">
               {card.ovr_rating}
             </div>
+          )}
+          {existingItem?.custom_image_url && (
+            <Badge variant="secondary" className="absolute bottom-2 left-2">
+              Your photo
+            </Badge>
           )}
         </div>
 
@@ -66,33 +88,33 @@ export default async function CardDetailPage({
             <p className="mt-1 text-muted-foreground">{card.team ?? "Free agent"}</p>
           </div>
 
-          <dl className="grid grid-cols-3 gap-px overflow-hidden rounded-xl bg-border ring-1 ring-border">
-            <Stat label="Position" value={card.position ?? "—"} />
-            <Stat label="Season" value={card.season ?? "—"} />
-            <Stat
-              label="Base price"
-              value={card.base_price != null ? `$${card.base_price.toFixed(2)}` : "—"}
-            />
-          </dl>
+          <StatStrip
+            items={[
+              { label: "Position", value: card.position ?? "—" },
+              { label: "Season", value: card.season ?? "—" },
+              {
+                label: "Base price",
+                value: card.base_price != null ? `$${card.base_price.toFixed(2)}` : "—",
+              },
+            ]}
+          />
 
           {card.set_name && (
             <p className="text-sm text-muted-foreground">
               From <span className="font-medium text-foreground">{card.set_name}</span>
             </p>
           )}
+
+          <div className="flex flex-col gap-2 sm:items-start">
+            <AddToInventoryDialog card={card} existingItem={existingItem} />
+            {existingItem && (
+              <p className="text-xs text-muted-foreground">
+                In your inventory · qty {existingItem.quantity}
+              </p>
+            )}
+          </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex flex-col gap-0.5 bg-card px-3 py-2.5">
-      <dt className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
-        {label}
-      </dt>
-      <dd className="font-heading text-lg leading-none font-bold">{value}</dd>
     </div>
   );
 }

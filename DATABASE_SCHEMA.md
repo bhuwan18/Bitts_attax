@@ -11,6 +11,10 @@ Full SQL lives in `supabase/migrations/`, applied in order:
 6. `0006_cards_filter_facets.sql` — `position`/`set_name` indexes (single-column and
    composite, same pattern as 0005) plus `cards_distinct_teams()` /
    `cards_distinct_set_names()` RPC functions backing the filter panel's Team/Set dropdowns
+7. `0007_admin_role.sql` — adds `profiles.role` and admin-only read policies on
+   `inventory_items`/`want_items`/`trades`/`trade_items` for the admin user list/activity view
+8. `0008_inventory_custom_images.sql` — adds `inventory_items.custom_image_url` plus the public
+   `card-images` storage bucket + owner-scoped storage policies backing it
 
 All tables live in the `public` schema. `auth.users` is Supabase-managed.
 
@@ -44,6 +48,7 @@ erDiagram
 | `username` | `text` | unique, not null |
 | `display_name` | `text` | nullable |
 | `avatar_url` | `text` | nullable |
+| `role` | `text` | check: `user, admin`; default `'user'` — promoted by hand via SQL, no self-serve UI |
 | `created_at` / `updated_at` | `timestamptz` | default `now()` |
 
 ### `cards`
@@ -83,6 +88,7 @@ Set dropdowns (`postgrest-js` has no `DISTINCT` support in its query builder).
 | `quantity` | `integer` | default 1, ≥ 0 |
 | `condition` | `text` | default `'good'` |
 | `notes` | `text` | nullable |
+| `custom_image_url` | `text` | nullable — a user's own photo of their physical card, in the `card-images` storage bucket, overriding the catalog's stock `cards.image_url` wherever this row's image is shown |
 
 Unique on `(user_id, card_id)` — adding an owned duplicate upserts quantity rather than duplicating rows.
 
@@ -180,14 +186,26 @@ Every table has RLS enabled. Summary (full policies in `0002_rls_policies.sql`):
 |---|---|
 | `profiles` | select: public; insert/update: `auth.uid() = id` only |
 | `cards` | select: public; writes: service-role only (no client policy — bypassed by the seeder's service key) |
-| `inventory_items` | full CRUD only where `auth.uid() = user_id` |
-| `want_items` | full CRUD only where `auth.uid() = user_id` |
+| `inventory_items` | full CRUD only where `auth.uid() = user_id`; **plus** select for admins (`profiles.role = 'admin'`) |
+| `want_items` | full CRUD only where `auth.uid() = user_id`; **plus** select for admins |
 | `trade_listings` | select: public; insert/update/delete: owner only |
 | `trade_listing_items` | select: public; insert/update/delete: only if the parent listing's `owner_id = auth.uid()` |
-| `trades` | select/update: `auth.uid() in (initiator_id, counterparty_id)`; insert: `auth.uid() = initiator_id` |
-| `trade_items` | select: participants of parent trade; insert/delete: the participant whose `offered_by = auth.uid()` |
-| `messages` | select/insert: `auth.uid() in (initiator_id, counterparty_id)` of the parent trade — the core privacy gate for chat |
+| `trades` | select/update: `auth.uid() in (initiator_id, counterparty_id)`; insert: `auth.uid() = initiator_id`; **plus** select for admins |
+| `trade_items` | select: participants of parent trade; insert/delete: the participant whose `offered_by = auth.uid()`; **plus** select for admins |
+| `messages` | select/insert: `auth.uid() in (initiator_id, counterparty_id)` of the parent trade — the core privacy gate for chat; deliberately **not** given an admin bypass, so trade chat stays private |
 | `fairness_rules` | select: public; write: service-role only |
+
+The admin bypass policies (`0007_admin_role.sql`) are read-only and additive — they grant an
+extra `select` path alongside the existing owner/participant policies rather than replacing them,
+and check the caller's own `profiles.role` via `exists (select 1 from public.profiles p where
+p.id = auth.uid() and p.role = 'admin')`, the same cross-table pattern already used by the
+`trade_items`/`trade_listing_items`/`messages` policies above.
 
 Policies that join through a second table (`trade_listing_items` → `trade_listings`, `trade_items`/`messages` → `trades`)
 were each verified with a manual two-user test rather than trusted on "no error" alone.
+
+## Storage
+
+| Bucket | Public | Notes |
+|---|---|---|
+| `card-images` | yes (read) | User-uploaded photos of physical cards, referenced by `inventory_items.custom_image_url`. Object path convention: `{auth.uid()}/{card_id}-{timestamp}.{ext}`. `storage.objects` policies (`0008_inventory_custom_images.sql`) restrict insert/update/delete to the path's own `{auth.uid()}` folder (`(storage.foldername(name))[1] = auth.uid()::text`); select is public since the bucket itself is public and these are just card photos. |

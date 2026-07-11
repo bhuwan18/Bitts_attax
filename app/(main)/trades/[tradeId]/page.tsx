@@ -11,13 +11,8 @@ import { useTrade } from "@/lib/queries/trades";
 import { useCurrentUser } from "@/lib/queries/auth";
 import { computeAndPersistFairness } from "./fairness-actions";
 import { updateTradeStatus } from "@/app/(main)/trades/actions";
+import { TRADE_STATUS_STYLE } from "@/lib/trades/status";
 import type { FairnessResult } from "@/lib/fairness";
-
-const STATUS_STYLE: Record<string, string> = {
-  proposed: "bg-warning text-warning-foreground",
-  accepted: "bg-success text-success-foreground",
-  rejected: "bg-destructive/15 text-destructive",
-};
 
 export default function TradeDetailPage({ params }: { params: Promise<{ tradeId: string }> }) {
   const { tradeId } = use(params);
@@ -64,7 +59,7 @@ export default function TradeDetailPage({ params }: { params: Promise<{ tradeId:
         <span
           className={cn(
             "clip-corner-sm px-2.5 py-1 font-heading text-xs font-bold tracking-wide uppercase",
-            STATUS_STYLE[trade.status] ?? "bg-muted text-muted-foreground"
+            TRADE_STATUS_STYLE[trade.status] ?? "bg-muted text-muted-foreground"
           )}
         >
           {trade.status}

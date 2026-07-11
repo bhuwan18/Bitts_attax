@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutGrid, Repeat, User, Package } from "lucide-react";
+import { LayoutGrid, Repeat, User, Package, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useCurrentProfile } from "@/lib/queries/auth";
 
 const NAV_ITEMS = [
   { href: "/cards", label: "Cards", icon: LayoutGrid },
@@ -14,10 +15,15 @@ const NAV_ITEMS = [
 
 export function MobileNav() {
   const pathname = usePathname();
+  const { data: profile } = useCurrentProfile();
+  const navItems =
+    profile?.role === "admin"
+      ? [...NAV_ITEMS, { href: "/admin", label: "Admin", icon: Shield }]
+      : NAV_ITEMS;
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 flex items-stretch border-t border-border/80 bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-lg md:hidden">
-      {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+      {navItems.map(({ href, label, icon: Icon }) => {
         const active = pathname.startsWith(href);
         return (
           <Link
