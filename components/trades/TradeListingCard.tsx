@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { ArrowLeftRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { proposeTrade } from "@/app/(main)/trades/actions";
 import type { TradeListingWithDetails } from "@/lib/queries/trades";
@@ -43,39 +43,52 @@ export function TradeListingCard({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">
-          {listing.title || `${listing.owner?.display_name ?? listing.owner?.username}'s listing`}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3">
-        <div>
-          <p className="mb-1 text-xs font-medium text-muted-foreground">Offering</p>
-          <div className="flex flex-wrap gap-1">
-            {haves.map((i) => (
-              <Badge key={i.card.id} variant="outline">
-                {i.card.name} ×{i.quantity}
-              </Badge>
-            ))}
-          </div>
-        </div>
-        <div>
-          <p className="mb-1 text-xs font-medium text-muted-foreground">Looking for</p>
-          <div className="flex flex-wrap gap-1">
-            {wants.map((i) => (
-              <Badge key={i.card.id} variant="outline">
-                {i.card.name} ×{i.quantity}
-              </Badge>
-            ))}
-          </div>
-        </div>
-        {!isOwnListing && (
-          <Button size="sm" disabled={proposing} onClick={handlePropose}>
-            {proposing ? "Proposing…" : "Propose Trade"}
-          </Button>
-        )}
-      </CardContent>
-    </Card>
+    <div className="flex flex-col gap-3 rounded-xl bg-card p-4 ring-1 ring-border">
+      <p className="font-heading text-base font-bold">
+        {listing.title || `${listing.owner?.display_name ?? listing.owner?.username}'s listing`}
+      </p>
+      <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-3">
+        <ItemGroup label="Offering" tone="success" items={haves} />
+        <ArrowLeftRight className="mt-4 size-4 shrink-0 text-muted-foreground" />
+        <ItemGroup label="Looking for" tone="primary" items={wants} />
+      </div>
+      {!isOwnListing && (
+        <Button size="sm" disabled={proposing} onClick={handlePropose} className="mt-1 w-fit">
+          {proposing ? "Proposing…" : "Propose trade"}
+        </Button>
+      )}
+    </div>
+  );
+}
+
+function ItemGroup({
+  label,
+  tone,
+  items,
+}: {
+  label: string;
+  tone: "success" | "primary";
+  items: { card: { id: string; name: string }; quantity: number }[];
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+        {label}
+      </p>
+      <div className="flex flex-wrap gap-1">
+        {items.map((i) => (
+          <span
+            key={i.card.id}
+            className={cn(
+              "clip-corner-sm px-2 py-0.5 text-xs font-medium",
+              tone === "success" ? "bg-success/15 text-success" : "bg-primary/15 text-primary"
+            )}
+          >
+            {i.card.name}
+            {i.quantity > 1 && ` ×${i.quantity}`}
+          </span>
+        ))}
+      </div>
+    </div>
   );
 }

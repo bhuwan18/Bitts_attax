@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
+import { AuthShell } from "../AuthShell";
 
 export default function MagicLinkPage() {
   const supabase = useSupabase();
@@ -33,36 +34,32 @@ export default function MagicLinkPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle>Sign in with a magic link</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {sent ? (
-            <p className="text-sm text-muted-foreground">
-              Check {email} for a sign-in link.
-            </p>
-          ) : (
-            <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-              {error && <p className="text-sm text-destructive">{error}</p>}
-              <Button type="submit" disabled={loading}>
-                {loading ? "Sending…" : "Send magic link"}
-              </Button>
-            </form>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+    <AuthShell title="Sign in with a magic link" description="No password, no problem.">
+      {sent ? (
+        <div className="flex flex-col items-start gap-3 rounded-xl bg-muted p-4 text-sm text-muted-foreground">
+          <Send className="size-5 text-primary" />
+          <p>
+            Check <span className="font-medium text-foreground">{email}</span> for a sign-in link.
+          </p>
+        </div>
+      ) : (
+        <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          {error && <p className="text-sm text-destructive">{error}</p>}
+          <Button type="submit" disabled={loading} className="mt-1">
+            {loading ? "Sending…" : "Send magic link"}
+          </Button>
+        </form>
+      )}
+    </AuthShell>
   );
 }

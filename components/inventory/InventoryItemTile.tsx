@@ -1,0 +1,49 @@
+"use client";
+
+import Image from "next/image";
+import { Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { QuantityStepper } from "@/components/shared/QuantityStepper";
+import type { InventoryItemWithCard } from "@/lib/queries/inventory";
+
+export function InventoryItemTile({
+  item,
+  onUpdateQuantity,
+  onRemove,
+}: {
+  item: InventoryItemWithCard;
+  onUpdateQuantity: (quantity: number) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <div className="clip-corner-sm flex flex-col gap-2 bg-card p-2 ring-1 ring-border">
+      <div className="clip-corner-sm relative aspect-[3/4] w-full overflow-hidden bg-muted">
+        {item.card.image_url && (
+          <Image
+            src={item.card.image_url}
+            alt={item.card.name}
+            fill
+            sizes="(max-width: 640px) 50vw, 33vw"
+            className="object-cover"
+          />
+        )}
+        <Button
+          size="icon-sm"
+          variant="ghost"
+          onClick={onRemove}
+          aria-label="Remove from inventory"
+          className="absolute top-1 right-1 bg-background/80 text-muted-foreground backdrop-blur-sm hover:text-destructive"
+        >
+          <Trash2 className="size-4" />
+        </Button>
+      </div>
+      <div className="flex flex-col gap-0.5">
+        <p className="truncate text-sm font-semibold">{item.card.name}</p>
+        <p className="truncate text-xs text-muted-foreground">{item.card.team ?? "—"}</p>
+      </div>
+      <div className="flex justify-center">
+        <QuantityStepper value={item.quantity} onChange={onUpdateQuantity} />
+      </div>
+    </div>
+  );
+}

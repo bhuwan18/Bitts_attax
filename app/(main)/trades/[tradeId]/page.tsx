@@ -2,15 +2,22 @@
 
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
+import { MessageCircle, Check, X } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { FairnessMeter } from "@/components/trades/FairnessMeter";
 import { useTrade } from "@/lib/queries/trades";
 import { useCurrentUser } from "@/lib/queries/auth";
 import { computeAndPersistFairness } from "./fairness-actions";
 import { updateTradeStatus } from "@/app/(main)/trades/actions";
 import type { FairnessResult } from "@/lib/fairness";
+
+const STATUS_STYLE: Record<string, string> = {
+  proposed: "bg-warning text-warning-foreground",
+  accepted: "bg-success text-success-foreground",
+  rejected: "bg-destructive/15 text-destructive",
+};
 
 export default function TradeDetailPage({ params }: { params: Promise<{ tradeId: string }> }) {
   const { tradeId } = use(params);
@@ -51,55 +58,78 @@ export default function TradeDetailPage({ params }: { params: Promise<{ tradeId:
   }
 
   return (
-    <div className="mx-auto flex max-w-lg flex-col gap-4 p-4">
+    <div className="mx-auto flex max-w-lg flex-col gap-5 p-4 sm:p-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Trade</h1>
-        <Badge variant="outline">{trade.status}</Badge>
+        <h1 className="font-heading text-3xl font-extrabold tracking-tight">Trade</h1>
+        <span
+          className={cn(
+            "clip-corner-sm px-2.5 py-1 font-heading text-xs font-bold tracking-wide uppercase",
+            STATUS_STYLE[trade.status] ?? "bg-muted text-muted-foreground"
+          )}
+        >
+          {trade.status}
+        </span>
       </div>
 
       {fairness && <FairnessMeter result={fairness} />}
 
       <div className="grid grid-cols-2 gap-3">
-        <div>
-          <p className="mb-1 text-xs font-medium text-muted-foreground">
-            {trade.initiator?.display_name ?? trade.initiator?.username} gives
-          </p>
-          <div className="flex flex-col gap-1">
-            {myGive.map((i) => (
-              <Badge key={i.card.id} variant="secondary" className="w-fit">
-                {i.card.name} ×{i.quantity}
-              </Badge>
-            ))}
-          </div>
-        </div>
-        <div>
-          <p className="mb-1 text-xs font-medium text-muted-foreground">
-            {trade.counterparty?.display_name ?? trade.counterparty?.username} gives
-          </p>
-          <div className="flex flex-col gap-1">
-            {myGet.map((i) => (
-              <Badge key={i.card.id} variant="secondary" className="w-fit">
-                {i.card.name} ×{i.quantity}
-              </Badge>
-            ))}
-          </div>
-        </div>
+        <TradeSide
+          label={`${trade.initiator?.display_name ?? trade.initiator?.username} gives`}
+          items={myGive}
+        />
+        <TradeSide
+          label={`${trade.counterparty?.display_name ?? trade.counterparty?.username} gives`}
+          items={myGet}
+        />
       </div>
 
       {canRespond && (
         <div className="flex gap-2">
-          <Button disabled={updating} onClick={() => respond("accepted")}>
+          <Button disabled={updating} onClick={() => respond("accepted")} className="flex-1">
+            <Check className="size-4" />
             Accept
           </Button>
-          <Button disabled={updating} variant="outline" onClick={() => respond("rejected")}>
+          <Button
+            disabled={updating}
+            variant="outline"
+            onClick={() => respond("rejected")}
+            className="flex-1"
+          >
+            <X className="size-4" />
             Decline
           </Button>
         </div>
       )}
 
       <Button variant="secondary" render={<Link href={`/trades/${tradeId}/chat`} />}>
+        <MessageCircle className="size-4" />
         Open chat
       </Button>
+    </div>
+  );
+}
+
+function TradeSide({
+  label,
+  items,
+}: {
+  label: string;
+  items: { card: { id: string; name: string }; quantity: number }[];
+}) {
+  return (
+    <div className="flex flex-col gap-2 rounded-xl bg-card p-3 ring-1 ring-border">
+      <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+        {label}
+      </p>
+      <div className="flex flex-col gap-1">
+        {items.map((i) => (
+          <span key={i.card.id} className="truncate text-sm font-medium">
+            {i.card.name}
+            {i.quantity > 1 && <span className="text-muted-foreground"> ×{i.quantity}</span>}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }

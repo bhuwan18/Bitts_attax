@@ -11,14 +11,16 @@ export function MessageBubble({
   return (
     <div className={cn("flex flex-col gap-0.5", isOwn ? "items-end" : "items-start")}>
       {!isOwn && (
-        <span className="px-1 text-xs text-muted-foreground">
+        <span className="px-1 text-xs font-medium text-muted-foreground">
           {message.sender?.display_name ?? message.sender?.username ?? "Unknown"}
         </span>
       )}
       <div
         className={cn(
-          "max-w-[75%] rounded-2xl px-3 py-2 text-sm break-words",
-          isOwn ? "bg-primary text-primary-foreground" : "bg-muted"
+          "max-w-[75%] rounded-2xl px-3.5 py-2 text-sm break-words",
+          isOwn
+            ? "rounded-br-md bg-primary text-primary-foreground"
+            : "rounded-bl-md bg-muted text-foreground"
         )}
       >
         {message.body}

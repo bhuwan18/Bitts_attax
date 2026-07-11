@@ -1,6 +1,9 @@
 import Image from "next/image";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { notFound } from "next/navigation";
-import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import { RARITY_LABEL, RARITY_STYLE, FOIL_RARITIES } from "@/lib/cards/rarity";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function CardDetailPage({
@@ -14,34 +17,82 @@ export default async function CardDetailPage({
 
   if (!card) notFound();
 
+  const foil = FOIL_RARITIES.has(card.rarity);
+
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-4 p-4 sm:flex-row">
-      <div className="relative aspect-[3/4] w-full max-w-xs overflow-hidden rounded-lg bg-muted sm:w-64">
-        {card.image_url ? (
-          <Image src={card.image_url} alt={card.name} fill className="object-cover" />
-        ) : (
-          <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-            No image
-          </div>
-        )}
-      </div>
-      <div className="flex flex-1 flex-col gap-2">
-        <h1 className="text-2xl font-semibold">{card.name}</h1>
-        <p className="text-muted-foreground">{card.team ?? "Free agent"}</p>
-        <div className="flex flex-wrap gap-2">
-          <Badge>{card.rarity.replace("_", " ")}</Badge>
-          {card.position && <Badge variant="outline">{card.position}</Badge>}
-          {card.set_name && <Badge variant="outline">{card.set_name}</Badge>}
+    <div className="mx-auto flex max-w-3xl flex-col gap-6 p-4 sm:p-6">
+      <Link
+        href="/cards"
+        className="flex w-fit items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+      >
+        <ArrowLeft className="size-4" />
+        Back to database
+      </Link>
+
+      <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
+        <div
+          className={cn(
+            "clip-corner relative aspect-[3/4] w-full max-w-xs shrink-0 bg-muted ring-1 ring-border sm:w-72",
+            foil && "foil-sheen"
+          )}
+        >
+          {card.image_url ? (
+            <Image src={card.image_url} alt={card.name} fill className="object-cover" />
+          ) : (
+            <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+              No image
+            </div>
+          )}
+          {card.ovr_rating != null && (
+            <div className="clip-corner-sm absolute top-0 left-0 bg-foreground/85 px-3 py-1.5 font-heading text-2xl leading-none font-extrabold text-background backdrop-blur-sm">
+              {card.ovr_rating}
+            </div>
+          )}
         </div>
-        <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-          <dt className="text-muted-foreground">OVR</dt>
-          <dd>{card.ovr_rating ?? "—"}</dd>
-          <dt className="text-muted-foreground">Base price</dt>
-          <dd>{card.base_price != null ? `$${card.base_price.toFixed(2)}` : "—"}</dd>
-          <dt className="text-muted-foreground">Season</dt>
-          <dd>{card.season ?? "—"}</dd>
-        </dl>
+
+        <div className="flex flex-1 flex-col gap-4">
+          <div>
+            <span
+              className={cn(
+                "clip-corner-sm mb-2 inline-block px-2.5 py-1 font-heading text-xs font-bold tracking-wide uppercase",
+                RARITY_STYLE[card.rarity] ?? RARITY_STYLE.other
+              )}
+            >
+              {RARITY_LABEL[card.rarity] ?? card.rarity}
+            </span>
+            <h1 className="font-heading text-4xl leading-[0.95] font-extrabold tracking-tight">
+              {card.name}
+            </h1>
+            <p className="mt-1 text-muted-foreground">{card.team ?? "Free agent"}</p>
+          </div>
+
+          <dl className="grid grid-cols-3 gap-px overflow-hidden rounded-xl bg-border ring-1 ring-border">
+            <Stat label="Position" value={card.position ?? "—"} />
+            <Stat label="Season" value={card.season ?? "—"} />
+            <Stat
+              label="Base price"
+              value={card.base_price != null ? `$${card.base_price.toFixed(2)}` : "—"}
+            />
+          </dl>
+
+          {card.set_name && (
+            <p className="text-sm text-muted-foreground">
+              From <span className="font-medium text-foreground">{card.set_name}</span>
+            </p>
+          )}
+        </div>
       </div>
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col gap-0.5 bg-card px-3 py-2.5">
+      <dt className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+        {label}
+      </dt>
+      <dd className="font-heading text-lg leading-none font-bold">{value}</dd>
     </div>
   );
 }

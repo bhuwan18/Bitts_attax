@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Search, Plus, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { QuantityStepper } from "@/components/shared/QuantityStepper";
 import { useCards } from "@/lib/queries/cards";
 
 export interface PickedItem {
@@ -40,24 +41,24 @@ export function HaveWantPicker({
 
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-sm font-medium">{label}</p>
+      <p className="text-sm font-semibold">{label}</p>
       <div className="relative">
-        <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="Search cards…"
-          className="pl-8"
+          className="pl-9"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
       </div>
       {search && (
-        <div className="flex max-h-48 flex-col divide-y overflow-y-auto rounded-md border">
-          {isLoading && <p className="p-2 text-sm text-muted-foreground">Searching…</p>}
+        <div className="flex max-h-48 flex-col divide-y divide-border overflow-y-auto rounded-xl bg-card ring-1 ring-border">
+          {isLoading && <p className="p-2.5 text-sm text-muted-foreground">Searching…</p>}
           {cards?.slice(0, 8).map((card) => (
             <button
               key={card.id}
               type="button"
-              className="flex items-center justify-between gap-2 p-2 text-left text-sm hover:bg-accent"
+              className="flex items-center justify-between gap-2 p-2.5 text-left text-sm transition-colors hover:bg-accent"
               onClick={() => addCard(card.id, card.name)}
             >
               <span className="truncate">{card.name}</span>
@@ -68,29 +69,29 @@ export function HaveWantPicker({
       )}
       <div className="flex flex-col gap-1.5">
         {items.map((item) => (
-          <div key={item.cardId} className="flex items-center gap-2 rounded-md border p-2 text-sm">
-            <span className="min-w-0 flex-1 truncate">{item.name}</span>
-            <Input
-              type="number"
-              min={1}
-              max={999}
+          <div
+            key={item.cardId}
+            className="flex items-center gap-2 rounded-xl bg-card p-2 pl-3 ring-1 ring-border"
+          >
+            <span className="min-w-0 flex-1 truncate text-sm">{item.name}</span>
+            <QuantityStepper
               value={item.quantity}
-              onChange={(e) => updateQuantity(item.cardId, Number(e.target.value) || 1)}
-              className="w-16"
+              onChange={(quantity) => updateQuantity(item.cardId, quantity)}
             />
             <Button
               type="button"
-              size="icon"
+              size="icon-sm"
               variant="ghost"
               onClick={() => removeCard(item.cardId)}
               aria-label={`Remove ${item.name}`}
+              className="text-muted-foreground hover:text-destructive"
             >
               <X className="size-4" />
             </Button>
           </div>
         ))}
         {items.length === 0 && (
-          <p className="text-xs text-muted-foreground">No cards added yet.</p>
+          <p className="px-1 text-xs text-muted-foreground">No cards added yet.</p>
         )}
       </div>
     </div>

@@ -9,28 +9,50 @@ const LABEL_TEXT: Record<FairnessResult["label"], string> = {
   very_uneven: "Very uneven",
 };
 
-const LABEL_COLOR: Record<FairnessResult["label"], string> = {
-  very_fair: "bg-emerald-500",
-  fair: "bg-green-500",
-  slightly_uneven: "bg-yellow-500",
-  uneven: "bg-orange-500",
-  very_uneven: "bg-red-500",
+const LABEL_STYLE: Record<FairnessResult["label"], { bar: string; chip: string; segments: number }> = {
+  very_fair: { bar: "bg-success", chip: "bg-success text-success-foreground", segments: 5 },
+  fair: { bar: "bg-success/70", chip: "bg-success/15 text-success", segments: 4 },
+  slightly_uneven: { bar: "bg-warning", chip: "bg-warning text-warning-foreground", segments: 3 },
+  uneven: { bar: "bg-destructive/70", chip: "bg-destructive/15 text-destructive", segments: 2 },
+  very_uneven: { bar: "bg-destructive", chip: "bg-destructive text-destructive-foreground", segments: 1 },
 };
 
 export function FairnessMeter({ result }: { result: FairnessResult }) {
+  const style = LABEL_STYLE[result.label];
+
   return (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex items-center justify-between text-sm">
-        <span className="font-medium">Fairness score</span>
-        <span className="text-muted-foreground">
-          {result.score.toFixed(0)}/100 · {LABEL_TEXT[result.label]}
+    <div className="flex items-center gap-4 rounded-xl bg-card p-4 ring-1 ring-border">
+      <div className="flex shrink-0 flex-col items-center leading-none">
+        <span className="font-heading text-4xl font-extrabold tabular-nums">
+          {result.score.toFixed(0)}
+        </span>
+        <span className="mt-0.5 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+          / 100
         </span>
       </div>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-        <div
-          className={cn("h-full rounded-full transition-all", LABEL_COLOR[result.label])}
-          style={{ width: `${Math.max(4, result.score)}%` }}
-        />
+      <div className="flex flex-1 flex-col gap-2">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-sm font-semibold">Fairness score</span>
+          <span
+            className={cn(
+              "clip-corner-sm px-2 py-0.5 font-heading text-[10px] font-bold tracking-wide uppercase",
+              style.chip
+            )}
+          >
+            {LABEL_TEXT[result.label]}
+          </span>
+        </div>
+        <div className="flex h-2 w-full gap-1">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div
+              key={i}
+              className={cn(
+                "h-full flex-1 rounded-full transition-colors duration-300",
+                i < style.segments ? style.bar : "bg-muted"
+              )}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );

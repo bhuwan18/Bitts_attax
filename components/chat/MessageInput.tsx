@@ -22,7 +22,7 @@ export function MessageInput({ tradeId }: { tradeId: string }) {
   }
 
   return (
-    <div className="flex items-end gap-2 border-t p-3">
+    <div className="flex items-end gap-2 border-t border-border bg-card p-3">
       <Textarea
         value={body}
         onChange={(e) => setBody(e.target.value)}
@@ -35,9 +35,15 @@ export function MessageInput({ tradeId }: { tradeId: string }) {
         placeholder="Message about this trade…"
         rows={1}
         maxLength={2000}
-        className="min-h-9 resize-none"
+        className="min-h-10 resize-none rounded-2xl"
       />
-      <Button size="icon" onClick={handleSend} disabled={sendMutation.isPending || !body.trim()}>
+      <Button
+        size="icon"
+        className="rounded-full"
+        onClick={handleSend}
+        disabled={sendMutation.isPending || !body.trim()}
+        aria-label="Send message"
+      >
         <Send className="size-4" />
       </Button>
     </div>

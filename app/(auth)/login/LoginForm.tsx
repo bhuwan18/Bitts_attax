@@ -6,9 +6,9 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
 import { GoogleSignInButton } from "../GoogleSignInButton";
+import { AuthShell } from "../AuthShell";
 
 export function LoginForm() {
   const supabase = useSupabase();
@@ -40,56 +40,52 @@ export function LoginForm() {
   const oauthError = searchParams.get("error");
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle>Log in to Bitts Attax</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-            {(error ?? oauthError) && (
-              <p className="text-sm text-destructive">{error ?? oauthError}</p>
-            )}
-            <Button type="submit" disabled={loading}>
-              {loading ? "Logging in…" : "Log in"}
-            </Button>
-          </form>
-          <div className="mt-4">
-            <GoogleSignInButton />
-          </div>
-          <div className="mt-4 flex flex-col gap-1 text-center text-sm text-muted-foreground">
-            <Link href="/magic-link" className="hover:text-foreground">
-              Use a magic link instead
+    <AuthShell
+      title="Log in"
+      description="Pick up your trades where you left off."
+      footer={
+        <div className="flex flex-col gap-1 text-center text-sm text-muted-foreground">
+          <Link href="/magic-link" className="hover:text-foreground">
+            Use a magic link instead
+          </Link>
+          <span>
+            No account?{" "}
+            <Link href="/signup" className="font-medium text-foreground underline underline-offset-4">
+              Sign up
             </Link>
-            <span>
-              No account?{" "}
-              <Link href="/signup" className="text-foreground underline">
-                Sign up
-              </Link>
-            </span>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+          </span>
+        </div>
+      }
+    >
+      <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="password">Password</Label>
+          <Input
+            id="password"
+            type="password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </div>
+        {(error ?? oauthError) && (
+          <p className="text-sm text-destructive">{error ?? oauthError}</p>
+        )}
+        <Button type="submit" disabled={loading} className="mt-1">
+          {loading ? "Logging in…" : "Log in"}
+        </Button>
+      </form>
+      <GoogleSignInButton />
+    </AuthShell>
   );
 }

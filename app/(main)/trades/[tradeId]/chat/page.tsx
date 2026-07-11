@@ -10,11 +10,15 @@ export default function TradeChatPage({ params }: { params: Promise<{ tradeId: s
 
   return (
     <div className="mx-auto flex max-w-lg flex-col">
-      <div className="flex items-center gap-2 border-b p-3">
-        <Link href={`/trades/${tradeId}`} className="text-muted-foreground hover:text-foreground">
+      <div className="flex items-center gap-3 border-b border-border bg-card px-3 py-3">
+        <Link
+          href={`/trades/${tradeId}`}
+          className="flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          aria-label="Back to trade"
+        >
           <ArrowLeft className="size-4" />
         </Link>
-        <h1 className="text-sm font-semibold">Trade chat</h1>
+        <h1 className="font-heading text-sm font-bold tracking-wide uppercase">Trade chat</h1>
       </div>
       <ChatInterface tradeId={tradeId} />
     </div>

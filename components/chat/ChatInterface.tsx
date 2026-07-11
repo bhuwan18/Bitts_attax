@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { MessageSquare } from "lucide-react";
 import { MessageBubble } from "@/components/chat/MessageBubble";
 import { MessageInput } from "@/components/chat/MessageInput";
 import { useMessages } from "@/lib/queries/messages";
@@ -19,14 +20,17 @@ export function ChatInterface({ tradeId }: { tradeId: string }) {
   }, [messages?.length]);
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] flex-col md:h-[calc(100vh-4rem)]">
+    <div className="flex h-[calc(100vh-8rem)] flex-col bg-background md:h-[calc(100vh-4rem)]">
       <div className="flex-1 overflow-y-auto p-3">
         <div className="flex flex-col gap-3">
           {isLoading && <p className="text-sm text-muted-foreground">Loading messages…</p>}
           {!isLoading && messages?.length === 0 && (
-            <p className="text-sm text-muted-foreground">
-              No messages yet. Say hello to get the trade moving.
-            </p>
+            <div className="flex flex-col items-center gap-2 py-14 text-center">
+              <MessageSquare className="size-7 text-muted-foreground/60" />
+              <p className="text-sm text-muted-foreground">
+                No messages yet. Say hello to get the trade moving.
+              </p>
+            </div>
           )}
           {messages?.map((message) => (
             <MessageBubble

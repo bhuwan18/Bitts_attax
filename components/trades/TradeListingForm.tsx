@@ -54,7 +54,7 @@ export function TradeListingForm() {
       </div>
       <HaveWantPicker label="Haves — cards you're offering" items={haves} onChange={setHaves} />
       <HaveWantPicker label="Wants — cards you're after" items={wants} onChange={setWants} />
-      <Button type="submit" disabled={submitting}>
+      <Button type="submit" disabled={submitting} className="mt-1">
         {submitting ? "Creating…" : "Create listing"}
       </Button>
     </form>

@@ -1,8 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { toast } from "sonner";
+import { PackageOpen } from "lucide-react";
 import { CardPicker } from "@/components/inventory/CardPicker";
 import { InventoryItemRow } from "@/components/inventory/InventoryItemRow";
+import { InventoryItemTile } from "@/components/inventory/InventoryItemTile";
+import { InventoryViewToggle, type InventoryView } from "@/components/inventory/InventoryViewToggle";
 import {
   useAddToInventory,
   useInventory,
@@ -11,6 +15,7 @@ import {
 } from "@/lib/queries/inventory";
 
 export function InventoryList() {
+  const [view, setView] = useState<InventoryView>("list");
   const { data: items, isLoading } = useInventory();
   const addMutation = useAddToInventory();
   const updateMutation = useUpdateInventoryQuantity();
@@ -32,29 +37,62 @@ export function InventoryList() {
       />
       {isLoading && <p className="text-sm text-muted-foreground">Loading your collection…</p>}
       {!isLoading && items?.length === 0 && (
-        <p className="text-sm text-muted-foreground">
-          You haven&apos;t added any cards yet. Search above to add your first one.
-        </p>
+        <div className="flex flex-col items-center gap-2 rounded-xl bg-muted/60 py-10 text-center">
+          <PackageOpen className="size-7 text-muted-foreground/60" />
+          <p className="text-sm text-muted-foreground">
+            No cards yet — search above to add your first Have.
+          </p>
+        </div>
       )}
-      <div className="flex flex-col gap-2">
-        {items?.map((item) => (
-          <InventoryItemRow
-            key={item.id}
-            item={item}
-            onUpdateQuantity={(quantity) =>
-              updateMutation.mutate(
-                { itemId: item.id, quantity },
-                { onError: (error) => toast.error(error.message) }
-              )
-            }
-            onRemove={() =>
-              removeMutation.mutate(item.id, {
-                onError: (error) => toast.error(error.message),
-              })
-            }
-          />
-        ))}
-      </div>
+      {!isLoading && items && items.length > 0 && (
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-medium text-muted-foreground">
+            {items.length} card{items.length === 1 ? "" : "s"}
+          </p>
+          <InventoryViewToggle view={view} onChange={setView} />
+        </div>
+      )}
+      {view === "list" ? (
+        <div className="flex flex-col gap-2">
+          {items?.map((item) => (
+            <InventoryItemRow
+              key={item.id}
+              item={item}
+              onUpdateQuantity={(quantity) =>
+                updateMutation.mutate(
+                  { itemId: item.id, quantity },
+                  { onError: (error) => toast.error(error.message) }
+                )
+              }
+              onRemove={() =>
+                removeMutation.mutate(item.id, {
+                  onError: (error) => toast.error(error.message),
+                })
+              }
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {items?.map((item) => (
+            <InventoryItemTile
+              key={item.id}
+              item={item}
+              onUpdateQuantity={(quantity) =>
+                updateMutation.mutate(
+                  { itemId: item.id, quantity },
+                  { onError: (error) => toast.error(error.message) }
+                )
+              }
+              onRemove={() =>
+                removeMutation.mutate(item.id, {
+                  onError: (error) => toast.error(error.message),
+                })
+              }
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

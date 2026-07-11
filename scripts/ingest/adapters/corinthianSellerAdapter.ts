@@ -1,11 +1,11 @@
 import type { RawCardRecord, SourceAdapter } from "../adapter";
 
-// Real scrape adapter for the Match Attax 2024/25 checklist listed at
-// corinthianseller.co.uk. Unlike exampleCheerioAdapter.ts (illustrative only), this is pointed at
-// a real site — see DATA_INGESTION_STRATEGY.md for the checklist that was worked through before
-// writing this: robots.txt allows these pages (only /ads/, /includes/, /nav/, /pages/, /process/,
-// and payment-callback pages are disallowed) but sets `crawl-delay: 10`, which this adapter
-// respects by fetching sub-pages sequentially with a delay between each request.
+// Real scrape adapter(s) for Match Attax checklists listed at corinthianseller.co.uk. Unlike
+// exampleCheerioAdapter.ts (illustrative only), this is pointed at a real site — see
+// DATA_INGESTION_STRATEGY.md for the checklist that was worked through before writing this:
+// robots.txt allows these pages (only /ads/, /includes/, /nav/, /pages/, /process/, and
+// payment-callback pages are disallowed) but sets `crawl-delay: 10`, which this adapter respects
+// by fetching sub-pages sequentially with a delay between each request.
 //
 // The site's HTML is old-school table markup with a lot of malformed closing tags (literally
 // "<\td>" / "<\tr>" / "<\th>" instead of "</td>" etc.), which breaks cheerio's normal
@@ -16,17 +16,29 @@ import type { RawCardRecord, SourceAdapter } from "../adapter";
 //   2. Stripping *all* tags (well-formed or not — both are still "<...>" tokens) from a card block
 //      and reading the remaining free-text lines in order, for the fields with no label prefix
 //      (team/position).
+//
+// This exact markup/URL convention (index page `cards-{product-slug}.php` linking to sub-pages
+// `{product-slug}-cards-{item}.php`) holds across every Match Attax season and product on the
+// site — verified against seasons back to 2021/22 — so everything below is a config-driven
+// factory rather than being specific to one season.
 const BASE_URL = "https://www.corinthianseller.co.uk/";
-const DEFAULT_INDEX_URL = "https://www.corinthianseller.co.uk/cards-match-attax-2025.php";
-const SUBPAGE_HREF_PATTERN = /href="([^"]*match-attax-2025-cards-[a-z0-9-]+\.php)"/gi;
 const CARD_BLOCK_PATTERN = /<table[^>]*class="cards"[^>]*>[\s\S]*?<\/table>/gi;
 const USER_AGENT =
   "BittsAttaxSeeder/1.0 (one-time catalog import for a personal card-trading hobby project)";
 const CRAWL_DELAY_MS = 10_000;
-
-const SET_NAME = "Match Attax 2024/25";
-const SEASON = "2024/25";
 const POSITION_WORDS = ["Goalkeeper", "Defender", "Midfielder", "Forward", "Captain"];
+
+export interface CorinthianSellerProductConfig {
+  id: string;
+  description: string;
+  indexUrl: string;
+  // Exact URL prefix for this product's sub-pages, e.g. "match-attax-2024-cards-". Must be
+  // specific per product — some index pages contain a stray cross-link to a different product's
+  // page, and a loose "any -cards- link" filter would wrongly sweep those in too.
+  subpagePrefix: string;
+  setName: string;
+  season: string;
+}
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -44,8 +56,9 @@ async function fetchHtml(url: string): Promise<string> {
   return response.text();
 }
 
-function extractSubpageUrls(indexHtml: string): string[] {
-  const hrefs = [...indexHtml.matchAll(SUBPAGE_HREF_PATTERN)].map((m) => m[1]);
+function extractSubpageUrls(indexHtml: string, subpagePrefix: string): string[] {
+  const pattern = new RegExp(`href="([^"]*${subpagePrefix}[a-z0-9-]+\\.php)"`, "gi");
+  const hrefs = [...indexHtml.matchAll(pattern)].map((m) => m[1]);
   return [...new Set(hrefs)].map(resolveUrl);
 }
 
@@ -62,7 +75,10 @@ function parseTeamPositionLine(line: string | undefined): {
   return { team: line, position: undefined };
 }
 
-function parseCardBlock(block: string): RawCardRecord | null {
+function parseCardBlock(
+  block: string,
+  labels: Pick<CorinthianSellerProductConfig, "setName" | "season">
+): RawCardRecord | null {
   const name = /alt="([^"]+)"/.exec(block)?.[1]?.trim();
   if (!name) return null;
 
@@ -70,7 +86,7 @@ function parseCardBlock(block: string): RawCardRecord | null {
   const image_url = rawSrc ? resolveUrl(rawSrc) : undefined;
 
   const cardNumber = /Card Number:\s*([^<]+)/i.exec(block)?.[1]?.trim();
-  const codeFromFilename = rawSrc ? /ma25-([a-z0-9]+)-/i.exec(rawSrc)?.[1] : undefined;
+  const codeFromFilename = rawSrc ? /[a-z0-9]+-([a-z0-9]+)-/i.exec(rawSrc)?.[1] : undefined;
   const external_ref = codeFromFilename ?? cardNumber;
 
   const cardtype = /class="cardtype">([^<]*)/i.exec(block)?.[1]?.trim();
@@ -113,8 +129,8 @@ function parseCardBlock(block: string): RawCardRecord | null {
     ovr_rating,
     base_price: price,
     image_url,
-    set_name: SET_NAME,
-    season: SEASON,
+    set_name: labels.setName,
+    season: labels.season,
     card_number: cardNumber,
     cardtype,
     defence,
@@ -125,38 +141,54 @@ function parseCardBlock(block: string): RawCardRecord | null {
   };
 }
 
-function parsePage(html: string): RawCardRecord[] {
+function parsePage(
+  html: string,
+  labels: Pick<CorinthianSellerProductConfig, "setName" | "season">
+): RawCardRecord[] {
   const blocks = html.match(CARD_BLOCK_PATTERN) ?? [];
-  return blocks.map(parseCardBlock).filter((r): r is RawCardRecord => r !== null);
+  return blocks.map((block) => parseCardBlock(block, labels)).filter((r): r is RawCardRecord => r !== null);
 }
 
-export const corinthianSellerAdapter: SourceAdapter = {
+export function createCorinthianSellerAdapter(config: CorinthianSellerProductConfig): SourceAdapter {
+  return {
+    id: config.id,
+    description: config.description,
+    async fetchRaw(options) {
+      const indexUrl = options.url ?? config.indexUrl;
+      const limit = options.limit ? Number(options.limit) : undefined;
+
+      console.log(`Fetching index page ${indexUrl}...`);
+      const indexHtml = await fetchHtml(indexUrl);
+      const subpageUrls = extractSubpageUrls(indexHtml, config.subpagePrefix).slice(0, limit);
+      console.log(
+        `Found ${subpageUrls.length} sub-page(s) to fetch (crawl-delay: ${CRAWL_DELAY_MS}ms).`
+      );
+
+      const records: RawCardRecord[] = [];
+      for (const [i, url] of subpageUrls.entries()) {
+        if (i > 0) await sleep(CRAWL_DELAY_MS);
+        console.log(`Fetching ${i + 1}/${subpageUrls.length}: ${url}`);
+        try {
+          const html = await fetchHtml(url);
+          const pageRecords = parsePage(html, config);
+          console.log(`  -> ${pageRecords.length} card(s)`);
+          records.push(...pageRecords);
+        } catch (error) {
+          console.warn(`  -> skipping page after fetch error: ${(error as Error).message}`);
+        }
+      }
+
+      return records;
+    },
+  };
+}
+
+export const corinthianSellerAdapter: SourceAdapter = createCorinthianSellerAdapter({
   id: "cheerio:corinthian-seller-matchattax-2025",
   description:
     "Match Attax 2024/25 checklist scraped from corinthianseller.co.uk (subset + team pages)",
-  async fetchRaw(options) {
-    const indexUrl = options.url ?? DEFAULT_INDEX_URL;
-    const limit = options.limit ? Number(options.limit) : undefined;
-
-    console.log(`Fetching index page ${indexUrl}...`);
-    const indexHtml = await fetchHtml(indexUrl);
-    const subpageUrls = extractSubpageUrls(indexHtml).slice(0, limit);
-    console.log(`Found ${subpageUrls.length} sub-page(s) to fetch (crawl-delay: ${CRAWL_DELAY_MS}ms).`);
-
-    const records: RawCardRecord[] = [];
-    for (const [i, url] of subpageUrls.entries()) {
-      if (i > 0) await sleep(CRAWL_DELAY_MS);
-      console.log(`Fetching ${i + 1}/${subpageUrls.length}: ${url}`);
-      try {
-        const html = await fetchHtml(url);
-        const pageRecords = parsePage(html);
-        console.log(`  -> ${pageRecords.length} card(s)`);
-        records.push(...pageRecords);
-      } catch (error) {
-        console.warn(`  -> skipping page after fetch error: ${(error as Error).message}`);
-      }
-    }
-
-    return records;
-  },
-};
+  indexUrl: "https://www.corinthianseller.co.uk/cards-match-attax-2025.php",
+  subpagePrefix: "match-attax-2025-cards-",
+  setName: "Match Attax 2024/25",
+  season: "2024/25",
+});

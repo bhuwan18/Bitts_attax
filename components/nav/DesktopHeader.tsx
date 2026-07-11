@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/nav/ThemeToggle";
 
 const NAV_ITEMS = [
   { href: "/cards", label: "Cards" },
@@ -15,25 +16,34 @@ export function DesktopHeader() {
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-40 hidden border-b bg-background/95 backdrop-blur md:block">
-      <div className="mx-auto flex max-w-6xl items-center gap-6 px-4 py-3">
-        <Link href="/cards" className="text-lg font-semibold">
-          Bitts Attax
+    <header className="sticky top-0 z-40 hidden border-b border-border/80 bg-background/90 backdrop-blur-lg md:block">
+      <div className="mx-auto flex h-16 max-w-6xl items-center gap-8 px-6">
+        <Link
+          href="/cards"
+          className="font-heading text-2xl font-extrabold tracking-tight uppercase"
+        >
+          Bitts <span className="text-primary">Attax</span>
         </Link>
-        <nav className="flex gap-4 text-sm">
-          {NAV_ITEMS.map(({ href, label }) => (
-            <Link
-              key={href}
-              href={href}
-              className={cn(
-                "transition-colors hover:text-foreground",
-                pathname.startsWith(href) ? "text-foreground font-medium" : "text-muted-foreground"
-              )}
-            >
-              {label}
-            </Link>
-          ))}
+        <nav className="flex h-full flex-1 items-center gap-1">
+          {NAV_ITEMS.map(({ href, label }) => {
+            const active = pathname.startsWith(href);
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={cn(
+                  "flex h-full items-center border-b-2 px-3 font-heading text-sm font-semibold tracking-wide uppercase transition-colors",
+                  active
+                    ? "border-primary text-foreground"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {label}
+              </Link>
+            );
+          })}
         </nav>
+        <ThemeToggle />
       </div>
     </header>
   );
