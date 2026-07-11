@@ -4,9 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutGrid, Repeat, User, Package, Shield, Users, Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useCurrentProfile, useCurrentUser } from "@/lib/queries/auth";
+import { useCurrentProfile } from "@/lib/queries/auth";
 import { useUnreadNotificationsCount } from "@/lib/queries/notifications";
-import { useNotificationsChannel } from "@/lib/realtime/useNotificationsChannel";
 
 const NAV_ITEMS = [
   { href: "/cards", label: "Cards", icon: LayoutGrid },
@@ -20,9 +19,7 @@ const NAV_ITEMS = [
 export function MobileNav() {
   const pathname = usePathname();
   const { data: profile } = useCurrentProfile();
-  const { data: user } = useCurrentUser();
   const { data: unreadCount } = useUnreadNotificationsCount();
-  useNotificationsChannel(user?.id);
 
   const navItems =
     profile?.role === "admin"

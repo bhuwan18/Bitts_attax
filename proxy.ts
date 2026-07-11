@@ -6,7 +6,15 @@ import { NextResponse, type NextRequest } from "next/server";
 // behind authentication. See Supabase SSR docs for why this must run here
 // rather than only in Server Components (token refresh needs to write cookies
 // back onto the response).
-const PROTECTED_PREFIXES = ["/cards", "/inventory", "/trades", "/profile", "/admin"];
+const PROTECTED_PREFIXES = [
+  "/cards",
+  "/inventory",
+  "/trades",
+  "/traders",
+  "/notifications",
+  "/profile",
+  "/admin",
+];
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });

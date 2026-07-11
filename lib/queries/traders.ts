@@ -12,6 +12,12 @@ export interface TraderInventoryItem {
   card: Card;
 }
 
+export interface TraderWantItem {
+  id: string;
+  priority: number;
+  card: Card;
+}
+
 // Every profile except the caller's own, optionally filtered by username/display
 // name. `profiles` select RLS is public, so this works for any signed-in caller.
 export function useTraders(search?: string) {
@@ -94,6 +100,27 @@ export function useTraderInventory(userId: string) {
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as unknown as TraderInventoryItem[];
+    },
+    enabled: !!userId,
+  });
+}
+
+// Relies on the public select policy added in
+// supabase/migrations/0010_want_items_public_read.sql — lets a viewer see what
+// to offer a trader, not just what to request from their Haves.
+export function useTraderWantList(userId: string) {
+  const supabase = useSupabase();
+
+  return useQuery({
+    queryKey: ["traderWantList", userId],
+    queryFn: async (): Promise<TraderWantItem[]> => {
+      const { data, error } = await supabase
+        .from("want_items")
+        .select("id, priority, card:cards(*)")
+        .eq("user_id", userId)
+        .order("priority", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as unknown as TraderWantItem[];
     },
     enabled: !!userId,
   });

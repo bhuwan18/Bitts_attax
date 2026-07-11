@@ -52,6 +52,7 @@ accept/decline actions).
 | `TraderBrowseList.tsx` | Search box + list of every other user (`useTraders(search)`), each showing a Haves count (`useTraderHavesCounts()`, one query for the whole list) |
 | `TraderCard.tsx` | One trader row: avatar, display name/`@username`, Haves count, links to `/traders/[userId]` |
 | `TraderInventoryGrid.tsx` | Read-only grid of another user's Haves (image, name, team, quantity) — presentational, no owner controls (unlike `InventoryItemTile.tsx`) |
+| `TraderWantList.tsx` | Read-only badge list of another user's Wants — lets a viewer see what to offer them, not just what to request from their Haves |
 | `ProposeTradeForm.tsx` | Two-sided picker built from each party's *actual* inventory (the caller's own `useInventory()` for "Your offer", the target's `useTraderInventory(userId)` for "Their items") rather than a global card search like `HaveWantPicker.tsx`; submits via `proposeTrade` and routes to the new trade |
 
 Used by: `app/(main)/traders/page.tsx` (browse), `app/(main)/traders/[userId]/page.tsx` (a trader's
@@ -126,7 +127,7 @@ Not components, but the client-side data layer every component above depends on:
 - `lib/queries/inventory.ts` — `useInventory()`, `useWantList()`, plus mutation hooks wrapping each Server Action
 - `lib/queries/trades.ts` — `useTradeListings()`, `useTrade(tradeId)`
 - `lib/queries/messages.ts` — `useMessages(tradeId)`, `useSendMessage(tradeId)`
-- `lib/queries/traders.ts` — `useTraders(search?)`, `useTraderHavesCounts()`, `useTraderProfile(userId)`, `useTraderInventory(userId)` — all reliant on the public `select` policy on `inventory_items` added in `0009_user_discovery_and_notifications.sql`
+- `lib/queries/traders.ts` — `useTraders(search?)`, `useTraderHavesCounts()`, `useTraderProfile(userId)`, `useTraderInventory(userId)`, `useTraderWantList(userId)` — reliant on the public `select` policies on `inventory_items`/`want_items` added in `0009_user_discovery_and_notifications.sql`/`0010_want_items_public_read.sql`
 - `lib/queries/notifications.ts` — `useNotifications()`, `useUnreadNotificationsCount()`, `useMarkNotificationRead()`, `useMarkAllNotificationsRead()`
 - `lib/queries/auth.ts` — `useCurrentUser()`, `useCurrentProfile()` (own `profiles` row, incl. `role` — used to conditionally show the Admin nav link)
 - `lib/queries/admin.ts` — `useAdminUsers()`, `useAdminRecentTrades()`, `useAdminUserActivity(userId)`, all reliant on the admin-only RLS `select` policies in `supabase/migrations/0007_admin_role.sql`

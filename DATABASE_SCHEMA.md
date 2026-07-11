@@ -18,6 +18,9 @@ Full SQL lives in `supabase/migrations/`, applied in order:
 9. `0009_user_discovery_and_notifications.sql` — adds a public `select` policy on
    `inventory_items` (user discovery — see below), the `notifications` table, its RLS policies, and
    the `notify_trade_event()` trigger that populates it
+10. `0010_want_items_public_read.sql` — adds a public `select` policy on `want_items`, same
+    additive technique as `0009`'s `inventory_items` policy, so a trader's profile can show what
+    they're looking for alongside their Haves
 
 All tables live in the `public` schema. `auth.users` is Supabase-managed.
 
@@ -216,7 +219,7 @@ Every table has RLS enabled. Summary (full policies in `0002_rls_policies.sql`):
 | `profiles` | select: public; insert/update: `auth.uid() = id` only |
 | `cards` | select: public; writes: service-role only (no client policy — bypassed by the seeder's service key) |
 | `inventory_items` | full CRUD only where `auth.uid() = user_id`; **plus** select for admins (`profiles.role = 'admin'`); **plus** select: public (`0009`, for the Traders discovery view — writes are still owner-only) |
-| `want_items` | full CRUD only where `auth.uid() = user_id`; **plus** select for admins |
+| `want_items` | full CRUD only where `auth.uid() = user_id`; **plus** select for admins; **plus** select: public (`0010`, shown on a trader's public profile — writes are still owner-only) |
 | `trade_listings` | select: public; insert/update/delete: owner only |
 | `trade_listing_items` | select: public; insert/update/delete: only if the parent listing's `owner_id = auth.uid()` |
 | `trades` | select/update: `auth.uid() in (initiator_id, counterparty_id)`; insert: `auth.uid() = initiator_id`; **plus** select for admins |

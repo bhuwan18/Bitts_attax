@@ -2,14 +2,12 @@
 
 import Link from "next/link";
 import { Bell } from "lucide-react";
-import { useCurrentUser } from "@/lib/queries/auth";
 import { useUnreadNotificationsCount } from "@/lib/queries/notifications";
-import { useNotificationsChannel } from "@/lib/realtime/useNotificationsChannel";
 
+// Realtime subscription lives in NotificationsListener.tsx (mounted once in
+// app/(main)/layout.tsx) — this just reads the query it keeps invalidated.
 export function NotificationBell() {
-  const { data: user } = useCurrentUser();
   const { data: unreadCount } = useUnreadNotificationsCount();
-  useNotificationsChannel(user?.id);
 
   return (
     <Link

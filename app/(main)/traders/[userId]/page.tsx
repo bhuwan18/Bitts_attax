@@ -3,8 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { StatStrip } from "@/components/shared/StatStrip";
 import { TraderInventoryGrid } from "@/components/traders/TraderInventoryGrid";
+import { TraderWantList } from "@/components/traders/TraderWantList";
 import { ProposeTradeForm } from "@/components/traders/ProposeTradeForm";
-import type { TraderInventoryItem } from "@/lib/queries/traders";
+import type { TraderInventoryItem, TraderWantItem } from "@/lib/queries/traders";
 
 export default async function TraderDetailPage({
   params,
@@ -28,7 +29,14 @@ export default async function TraderDetailPage({
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
+  const { data: wants } = await supabase
+    .from("want_items")
+    .select("id, priority, card:cards(*)")
+    .eq("user_id", userId)
+    .order("priority", { ascending: false });
+
   const items = (inventory ?? []) as unknown as TraderInventoryItem[];
+  const wantItems = (wants ?? []) as unknown as TraderWantItem[];
   const name = profile.display_name ?? profile.username;
   const initial = name.charAt(0).toUpperCase();
 
@@ -46,11 +54,21 @@ export default async function TraderDetailPage({
         </div>
       </div>
 
-      <StatStrip items={[{ label: "Haves", value: items.length }]} />
+      <StatStrip
+        items={[
+          { label: "Haves", value: items.length },
+          { label: "Wants", value: wantItems.length },
+        ]}
+      />
 
       <div className="flex flex-col gap-2">
         <h2 className="font-heading text-lg font-bold tracking-tight">Haves</h2>
         <TraderInventoryGrid items={items} />
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <h2 className="font-heading text-lg font-bold tracking-tight">Wants</h2>
+        <TraderWantList items={wantItems} />
       </div>
 
       <ProposeTradeForm counterpartyId={userId} />
