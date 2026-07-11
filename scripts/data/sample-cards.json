@@ -1,0 +1,98 @@
+[
+  {
+    "external_ref": "S1-101",
+    "name": "Jamal Musiala",
+    "team": "Bayern Munich",
+    "position": "MID",
+    "rarity": "Super Rare",
+    "ovr_rating": "89",
+    "base_price": "8.50",
+    "image_url": "https://example.com/cards/s1-101.jpg",
+    "set_name": "2025/26 Champions Update",
+    "season": "2025/26"
+  },
+  {
+    "external_ref": "S1-102",
+    "name": "Lamine Yamal",
+    "team": "Barcelona",
+    "position": "FWD",
+    "rarity": "Legend",
+    "ovr_rating": "90",
+    "base_price": "22.00",
+    "image_url": "https://example.com/cards/s1-102.jpg",
+    "set_name": "2025/26 Champions Update",
+    "season": "2025/26"
+  },
+  {
+    "external_ref": "S1-103",
+    "name": "Pedri",
+    "team": "Barcelona",
+    "position": "MID",
+    "rarity": "Rare",
+    "ovr_rating": "87",
+    "base_price": "6.25",
+    "image_url": "https://example.com/cards/s1-103.jpg",
+    "set_name": "2025/26 Champions Update",
+    "season": "2025/26"
+  },
+  {
+    "external_ref": "S1-104",
+    "name": "Florian Wirtz",
+    "team": "Liverpool",
+    "position": "MID",
+    "rarity": "SR",
+    "ovr_rating": "88",
+    "base_price": "9.00",
+    "image_url": "https://example.com/cards/s1-104.jpg",
+    "set_name": "2025/26 Champions Update",
+    "season": "2025/26"
+  },
+  {
+    "external_ref": "S1-105",
+    "name": "Achraf Hakimi",
+    "team": "Paris Saint-Germain",
+    "position": "DEF",
+    "rarity": "Uncommon",
+    "ovr_rating": "85",
+    "base_price": "3.00",
+    "image_url": "https://example.com/cards/s1-105.jpg",
+    "set_name": "2025/26 Champions Update",
+    "season": "2025/26"
+  },
+  {
+    "external_ref": "S1-106",
+    "name": "Gianluigi Donnarumma",
+    "team": "Manchester City",
+    "position": "GK",
+    "rarity": "Rare",
+    "ovr_rating": "88",
+    "base_price": "5.75",
+    "image_url": "https://example.com/cards/s1-106.jpg",
+    "set_name": "2025/26 Champions Update",
+    "season": "2025/26"
+  },
+  {
+    "external_ref": "S1-107",
+    "name": "Xavi Simons",
+    "team": "RB Leipzig",
+    "position": "MID",
+    "rarity": "Common",
+    "ovr_rating": "83",
+    "base_price": "1.75",
+    "image_url": "https://example.com/cards/s1-107.jpg",
+    "set_name": "2025/26 Champions Update",
+    "season": "2025/26"
+  },
+  {
+    "external_ref": "S1-108",
+    "name": "Victor Osimhen",
+    "team": "Galatasaray",
+    "position": "FWD",
+    "rarity": "Rare",
+    "ovr_rating": "87",
+    "base_price": "6.50",
+    "image_url": "https://example.com/cards/s1-108.jpg",
+    "set_name": "2025/26 Champions Update",
+    "season": "2025/26"
+  }
+]
