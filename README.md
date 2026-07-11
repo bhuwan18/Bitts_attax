@@ -62,7 +62,28 @@ npx supabase db push
 Or paste each file's contents into the Supabase Dashboard's SQL Editor, in order:
 `0001_init_schema.sql` → `0002_rls_policies.sql` → `0003_fairness_config_seed.sql` → `0004_realtime_publication.sql`.
 
-### 4. Regenerate database types (optional but recommended)
+### 4. Google sign-in (optional)
+
+The login and signup pages include a "Continue with Google" button (`app/(auth)/GoogleSignInButton.tsx`).
+It works out of the box once the provider is enabled:
+
+1. In [Google Cloud Console](https://console.cloud.google.com/apis/credentials), create an **OAuth 2.0
+   Client ID** (Application type: **Web application**). Add this Authorized redirect URI:
+   `https://your-project-ref.supabase.co/auth/v1/callback`
+2. In the Supabase Dashboard, go to **Authentication > Providers > Google**, enable it, and paste in
+   the Client ID and Client Secret from step 1.
+3. Still in the Dashboard, under **Authentication > URL Configuration**, add your app's callback to
+   the redirect allow-list, e.g. `http://localhost:3000/**` for local dev.
+
+No code changes or new env vars are needed for the hosted project — the Client ID/Secret live in the
+Supabase Dashboard, not in `.env.local`.
+
+To run Google sign-in against **local** Supabase (`supabase start`) instead, set
+`SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID` and `SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET` in your shell env
+(see `.env.example`) — `supabase/config.toml` already has `[auth.external.google]` wired up to read
+them.
+
+### 5. Regenerate database types (optional but recommended)
 
 `lib/types/database.types.ts` is hand-authored to match the migrations. Once your project is live,
 regenerate the authoritative version:
@@ -71,7 +92,7 @@ regenerate the authoritative version:
 npx supabase gen types typescript --project-id your-project-ref > lib/types/database.types.ts
 ```
 
-### 5. Seed the card database
+### 6. Seed the card database
 
 ```bash
 npm run seed -- --source=csv --file=./scripts/data/sample-cards.csv
@@ -81,7 +102,7 @@ npm run seed -- --source=json --file=./scripts/data/sample-cards.json
 See [DATA_INGESTION_STRATEGY.md](./DATA_INGESTION_STRATEGY.md) for the adapter architecture and how
 to point it at a real data source later.
 
-### 6. Run the app
+### 7. Run the app
 
 ```bash
 npm run dev

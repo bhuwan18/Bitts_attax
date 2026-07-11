@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
+import { GoogleSignInButton } from "../GoogleSignInButton";
 
 export function LoginForm() {
   const supabase = useSupabase();
@@ -34,6 +35,9 @@ export function LoginForm() {
     router.push(searchParams.get("redirectTo") ?? "/cards");
     router.refresh();
   }
+
+  // Surfaced when /auth/callback bounces a failed OAuth exchange back here.
+  const oauthError = searchParams.get("error");
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
@@ -63,11 +67,16 @@ export function LoginForm() {
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
-            {error && <p className="text-sm text-destructive">{error}</p>}
+            {(error ?? oauthError) && (
+              <p className="text-sm text-destructive">{error ?? oauthError}</p>
+            )}
             <Button type="submit" disabled={loading}>
               {loading ? "Logging in…" : "Log in"}
             </Button>
           </form>
+          <div className="mt-4">
+            <GoogleSignInButton />
+          </div>
           <div className="mt-4 flex flex-col gap-1 text-center text-sm text-muted-foreground">
             <Link href="/magic-link" className="hover:text-foreground">
               Use a magic link instead

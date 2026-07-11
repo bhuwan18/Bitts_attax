@@ -6,6 +6,7 @@ import { csvAdapter } from "./ingest/adapters/csvAdapter";
 import { jsonAdapter } from "./ingest/adapters/jsonAdapter";
 import { exampleCheerioAdapter } from "./ingest/adapters/exampleCheerioAdapter";
 import { examplePuppeteerAdapter } from "./ingest/adapters/examplePuppeteerAdapter";
+import { corinthianSellerAdapter } from "./ingest/adapters/corinthianSellerAdapter";
 import { normalizeRecords } from "./ingest/normalize";
 import { upsertCards } from "./ingest/upsertCards";
 
@@ -13,6 +14,7 @@ adapterRegistry.register(csvAdapter);
 adapterRegistry.register(jsonAdapter);
 adapterRegistry.register(exampleCheerioAdapter);
 adapterRegistry.register(examplePuppeteerAdapter);
+adapterRegistry.register(corinthianSellerAdapter);
 
 function parseArgs(argv: string[]): Record<string, string> {
   const options: Record<string, string> = {};

@@ -1,21 +1,21 @@
 external_ref,name,team,position,rarity,ovr_rating,base_price,image_url,set_name,season
-S1-001,Jude Bellingham,Real Madrid,MID,super_rare,91,12.50,https://example.com/cards/s1-001.jpg,2025/26 Champions Update,2025/26
-S1-002,Erling Haaland,Manchester City,FWD,legend,94,28.00,https://example.com/cards/s1-002.jpg,2025/26 Champions Update,2025/26
-S1-003,Bukayo Saka,Arsenal,FWD,rare,88,6.75,https://example.com/cards/s1-003.jpg,2025/26 Champions Update,2025/26
-S1-004,Declan Rice,Arsenal,MID,uncommon,86,3.20,https://example.com/cards/s1-004.jpg,2025/26 Champions Update,2025/26
-S1-005,Virgil van Dijk,Liverpool,DEF,rare,89,7.00,https://example.com/cards/s1-005.jpg,2025/26 Champions Update,2025/26
-S1-006,Kylian Mbappe,Real Madrid,FWD,legend,96,32.00,https://example.com/cards/s1-006.jpg,2025/26 Champions Update,2025/26
-S1-007,Phil Foden,Manchester City,MID,super_rare,89,9.50,https://example.com/cards/s1-007.jpg,2025/26 Champions Update,2025/26
-S1-008,Alisson Becker,Liverpool,GK,uncommon,87,4.00,https://example.com/cards/s1-008.jpg,2025/26 Champions Update,2025/26
-S1-009,Cole Palmer,Chelsea,MID,rare,87,6.00,https://example.com/cards/s1-009.jpg,2025/26 Champions Update,2025/26
-S1-010,Marcus Rashford,Manchester United,FWD,common,82,1.50,https://example.com/cards/s1-010.jpg,2025/26 Champions Update,2025/26
-S1-011,Rodri,Manchester City,MID,super_rare,90,10.00,https://example.com/cards/s1-011.jpg,2025/26 Champions Update,2025/26
-S1-012,William Saliba,Arsenal,DEF,uncommon,85,3.00,https://example.com/cards/s1-012.jpg,2025/26 Champions Update,2025/26
-S1-013,Trent Alexander-Arnold,Real Madrid,DEF,rare,87,5.50,https://example.com/cards/s1-013.jpg,2025/26 Champions Update,2025/26
-S1-014,Martin Odegaard,Arsenal,MID,uncommon,86,3.50,https://example.com/cards/s1-014.jpg,2025/26 Champions Update,2025/26
-S1-015,Vinicius Jr,Real Madrid,FWD,legend,92,20.00,https://example.com/cards/s1-015.jpg,2025/26 Champions Update,2025/26
-S1-016,Mohamed Salah,Liverpool,FWD,legend,90,18.00,https://example.com/cards/s1-016.jpg,2025/26 Champions Update,2025/26
-S1-017,Ruben Dias,Manchester City,DEF,rare,87,5.00,https://example.com/cards/s1-017.jpg,2025/26 Champions Update,2025/26
-S1-018,Bruno Fernandes,Manchester United,MID,rare,86,4.50,https://example.com/cards/s1-018.jpg,2025/26 Champions Update,2025/26
-S1-019,Kevin De Bruyne,Manchester City,MID,limited,93,45.00,https://example.com/cards/s1-019.jpg,2025/26 Champions Update,2025/26
-S1-020,Gabriel Martinelli,Arsenal,FWD,common,81,1.25,https://example.com/cards/s1-020.jpg,2025/26 Champions Update,2025/26
+S1-001,Jude Bellingham,Real Madrid,MID,super_rare,91,12.50,https://placehold.co/300x400/1e293b/ffffff.png?text=Jude+Bellingham,2025/26 Champions Update,2025/26
+S1-002,Erling Haaland,Manchester City,FWD,legend,94,28.00,https://placehold.co/300x400/1e293b/ffffff.png?text=Erling+Haaland,2025/26 Champions Update,2025/26
+S1-003,Bukayo Saka,Arsenal,FWD,rare,88,6.75,https://placehold.co/300x400/1e293b/ffffff.png?text=Bukayo+Saka,2025/26 Champions Update,2025/26
+S1-004,Declan Rice,Arsenal,MID,uncommon,86,3.20,https://placehold.co/300x400/1e293b/ffffff.png?text=Declan+Rice,2025/26 Champions Update,2025/26
+S1-005,Virgil van Dijk,Liverpool,DEF,rare,89,7.00,https://placehold.co/300x400/1e293b/ffffff.png?text=Virgil+van+Dijk,2025/26 Champions Update,2025/26
+S1-006,Kylian Mbappe,Real Madrid,FWD,legend,96,32.00,https://placehold.co/300x400/1e293b/ffffff.png?text=Kylian+Mbappe,2025/26 Champions Update,2025/26
+S1-007,Phil Foden,Manchester City,MID,super_rare,89,9.50,https://placehold.co/300x400/1e293b/ffffff.png?text=Phil+Foden,2025/26 Champions Update,2025/26
+S1-008,Alisson Becker,Liverpool,GK,uncommon,87,4.00,https://placehold.co/300x400/1e293b/ffffff.png?text=Alisson+Becker,2025/26 Champions Update,2025/26
+S1-009,Cole Palmer,Chelsea,MID,rare,87,6.00,https://placehold.co/300x400/1e293b/ffffff.png?text=Cole+Palmer,2025/26 Champions Update,2025/26
+S1-010,Marcus Rashford,Manchester United,FWD,common,82,1.50,https://placehold.co/300x400/1e293b/ffffff.png?text=Marcus+Rashford,2025/26 Champions Update,2025/26
+S1-011,Rodri,Manchester City,MID,super_rare,90,10.00,https://placehold.co/300x400/1e293b/ffffff.png?text=Rodri,2025/26 Champions Update,2025/26
+S1-012,William Saliba,Arsenal,DEF,uncommon,85,3.00,https://placehold.co/300x400/1e293b/ffffff.png?text=William+Saliba,2025/26 Champions Update,2025/26
+S1-013,Trent Alexander-Arnold,Real Madrid,DEF,rare,87,5.50,https://placehold.co/300x400/1e293b/ffffff.png?text=Trent+Alexander-Arnold,2025/26 Champions Update,2025/26
+S1-014,Martin Odegaard,Arsenal,MID,uncommon,86,3.50,https://placehold.co/300x400/1e293b/ffffff.png?text=Martin+Odegaard,2025/26 Champions Update,2025/26
+S1-015,Vinicius Jr,Real Madrid,FWD,legend,92,20.00,https://placehold.co/300x400/1e293b/ffffff.png?text=Vinicius+Jr,2025/26 Champions Update,2025/26
+S1-016,Mohamed Salah,Liverpool,FWD,legend,90,18.00,https://placehold.co/300x400/1e293b/ffffff.png?text=Mohamed+Salah,2025/26 Champions Update,2025/26
+S1-017,Ruben Dias,Manchester City,DEF,rare,87,5.00,https://placehold.co/300x400/1e293b/ffffff.png?text=Ruben+Dias,2025/26 Champions Update,2025/26
+S1-018,Bruno Fernandes,Manchester United,MID,rare,86,4.50,https://placehold.co/300x400/1e293b/ffffff.png?text=Bruno+Fernandes,2025/26 Champions Update,2025/26
+S1-019,Kevin De Bruyne,Manchester City,MID,limited,93,45.00,https://placehold.co/300x400/1e293b/ffffff.png?text=Kevin+De+Bruyne,2025/26 Champions Update,2025/26
+S1-020,Gabriel Martinelli,Arsenal,FWD,common,81,1.25,https://placehold.co/300x400/1e293b/ffffff.png?text=Gabriel+Martinelli,2025/26 Champions Update,2025/26

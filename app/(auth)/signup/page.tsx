@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
+import { GoogleSignInButton } from "../GoogleSignInButton";
 
 export default function SignupPage() {
   const supabase = useSupabase();
@@ -100,6 +101,9 @@ export default function SignupPage() {
               {loading ? "Signing up…" : "Sign up"}
             </Button>
           </form>
+          <div className="mt-4">
+            <GoogleSignInButton />
+          </div>
           <p className="mt-4 text-center text-sm text-muted-foreground">
             Already have an account?{" "}
             <Link href="/login" className="text-foreground underline">

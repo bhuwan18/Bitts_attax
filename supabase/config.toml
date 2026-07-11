@@ -18,13 +18,22 @@ port = 54323
 [auth]
 enabled = true
 site_url = "http://localhost:3000"
-additional_redirect_urls = ["http://localhost:3000/auth/callback"]
+# Wildcard so the OAuth callback validates with its ?redirectTo=... query.
+additional_redirect_urls = ["http://localhost:3000/**"]
 jwt_expiry = 3600
 enable_signup = true
 
 [auth.email]
 enable_signup = true
 enable_confirmations = false
+
+# Google OAuth for local `supabase start`. Credentials come from the shell env
+# (or `supabase/.env`); see .env.example. For the hosted project, enable Google
+# under Authentication > Providers in the dashboard instead.
+[auth.external.google]
+enabled = true
+client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"
 
 [realtime]
 enabled = true

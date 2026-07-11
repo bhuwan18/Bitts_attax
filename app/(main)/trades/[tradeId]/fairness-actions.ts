@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { computeFairnessScore, type FairnessConfig, type FairnessResult } from "@/lib/fairness";
-import type { Rarity } from "@/lib/types/database.types";
+import type { Json, Rarity } from "@/lib/types/database.types";
 
 async function loadActiveFairnessConfig(
   supabase: Awaited<ReturnType<typeof createClient>>
@@ -75,7 +75,7 @@ export async function computeAndPersistFairness(tradeId: string): Promise<Fairne
     .from("trades")
     .update({
       fairness_score: result.score,
-      fairness_breakdown: result as unknown as Record<string, unknown>,
+      fairness_breakdown: result as unknown as Json,
     })
     .eq("id", parsedTradeId);
 

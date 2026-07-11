@@ -30,11 +30,48 @@ const RARITY_ALIASES: Record<string, (typeof RARITY_VALUES)[number]> = {
   limited: "limited",
   "limited edition": "limited",
   le: "limited",
+
+  // corinthianseller.co.uk (Match Attax 2024/25) cardtype labels. Some of these carry a
+  // trailing "(Update N)" suffix on the site that increments over the season — stripped by
+  // normalizeRarity() below before this lookup runs, so the bare label is enough here.
+  "1st edition": "common",
+  "club logos": "common",
+  captain: "uncommon",
+  "festive squadzone": "uncommon",
+  "new signings": "uncommon",
+  "scream team": "uncommon",
+  "snow ballers": "uncommon",
+  "star ballers": "uncommon",
+  "queens of europe": "uncommon",
+  "100 club": "rare",
+  "black edge": "rare",
+  "crystal foil parallel": "rare",
+  tactic: "rare",
+  "tactic cards": "rare",
+  "topps heritage": "rare",
+  "gold edge": "super_rare",
+  "pro elite shield": "super_rare",
+  "starburst exclusive": "super_rare",
+  starburst: "super_rare",
+  "trophy triumph": "super_rare",
+  "man of the match signature": "legend",
+  "match attax hall of fame": "legend",
+  "vintage vibes legends": "legend",
+  "platinum pull limited": "limited",
+  "platinum pull": "limited",
+  "entertainers limited": "limited",
+  "classic celebration limited": "limited",
+  "generation now limited": "limited",
+  "time to shine limited": "limited",
+  "blue diamond limited": "limited",
 };
 
 export function normalizeRarity(raw: unknown): (typeof RARITY_VALUES)[number] {
   if (typeof raw !== "string") return "other";
-  const key = raw.trim().toLowerCase();
+  const key = raw
+    .trim()
+    .toLowerCase()
+    .replace(/\s*\([^)]*\)\s*$/, "");
   return RARITY_ALIASES[key] ?? "other";
 }
 
