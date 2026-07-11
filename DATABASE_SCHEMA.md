@@ -15,6 +15,9 @@ Full SQL lives in `supabase/migrations/`, applied in order:
    `inventory_items`/`want_items`/`trades`/`trade_items` for the admin user list/activity view
 8. `0008_inventory_custom_images.sql` — adds `inventory_items.custom_image_url` plus the public
    `card-images` storage bucket + owner-scoped storage policies backing it
+9. `0009_user_discovery_and_notifications.sql` — adds a public `select` policy on
+   `inventory_items` (user discovery — see below), the `notifications` table, its RLS policies, and
+   the `notify_trade_event()` trigger that populates it
 
 All tables live in the `public` schema. `auth.users` is Supabase-managed.
 
@@ -27,6 +30,8 @@ erDiagram
     PROFILES ||--o{ TRADE_LISTINGS : creates
     PROFILES ||--o{ TRADES : "initiates / receives"
     PROFILES ||--o{ MESSAGES : sends
+    PROFILES ||--o{ NOTIFICATIONS : receives
+    TRADES ||--o{ NOTIFICATIONS : "generates (trigger)"
     CARDS ||--o{ INVENTORY_ITEMS : "referenced by"
     CARDS ||--o{ WANT_ITEMS : "referenced by"
     CARDS ||--o{ TRADE_LISTING_ITEMS : "referenced by"
@@ -162,6 +167,30 @@ Chat tied to a trade; channel-per-trade Realtime pattern (see [SYSTEM_ARCHITECTU
 | `body` | `text` | ≤ 2000 chars |
 | `created_at` | `timestamptz` | indexed with `trade_id` |
 
+### `notifications`
+Recipient's inbox row for a trade lifecycle event. Rows are only ever created by the
+`notify_trade_event()` trigger on `trades` (see below) — there is intentionally no client insert
+path.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | `uuid` PK | |
+| `user_id` | `uuid` | → `profiles(id)` — the recipient |
+| `actor_id` | `uuid` | → `profiles(id)`, nullable — who caused the event |
+| `type` | `text` | check: `trade_proposed, trade_accepted, trade_rejected, trade_completed, trade_cancelled` |
+| `trade_id` | `uuid` | → `trades(id)` on delete cascade |
+| `read_at` | `timestamptz` | nullable — unread until set |
+| `created_at` | `timestamptz` | default `now()` |
+
+Indexes: `(user_id, created_at desc)` for the inbox list; partial `(user_id) where read_at is null`
+for the unread-count query. Added to the `supabase_realtime` publication so the notification bell
+updates live (same technique as `messages` in `0004_realtime_publication.sql`).
+
+`notify_trade_event()` (`security definer`, mirrors `handle_new_user()`'s pattern in
+`0001_init_schema.sql`) fires `after insert on trades` (creates a `trade_proposed` row for the
+counterparty) and `after update of status on trades` (creates a `trade_<status>` row for whichever
+party didn't make the change, inferred from `auth.uid()` inside the trigger).
+
 ### `fairness_rules` (TradeFairnessRules)
 Table-driven weights so the fairness heuristic is tunable without a code deploy.
 
@@ -186,7 +215,7 @@ Every table has RLS enabled. Summary (full policies in `0002_rls_policies.sql`):
 |---|---|
 | `profiles` | select: public; insert/update: `auth.uid() = id` only |
 | `cards` | select: public; writes: service-role only (no client policy — bypassed by the seeder's service key) |
-| `inventory_items` | full CRUD only where `auth.uid() = user_id`; **plus** select for admins (`profiles.role = 'admin'`) |
+| `inventory_items` | full CRUD only where `auth.uid() = user_id`; **plus** select for admins (`profiles.role = 'admin'`); **plus** select: public (`0009`, for the Traders discovery view — writes are still owner-only) |
 | `want_items` | full CRUD only where `auth.uid() = user_id`; **plus** select for admins |
 | `trade_listings` | select: public; insert/update/delete: owner only |
 | `trade_listing_items` | select: public; insert/update/delete: only if the parent listing's `owner_id = auth.uid()` |
@@ -194,6 +223,7 @@ Every table has RLS enabled. Summary (full policies in `0002_rls_policies.sql`):
 | `trade_items` | select: participants of parent trade; insert/delete: the participant whose `offered_by = auth.uid()`; **plus** select for admins |
 | `messages` | select/insert: `auth.uid() in (initiator_id, counterparty_id)` of the parent trade — the core privacy gate for chat; deliberately **not** given an admin bypass, so trade chat stays private |
 | `fairness_rules` | select: public; write: service-role only |
+| `notifications` | select/update: `auth.uid() = user_id` (update is how a row gets marked read); **no insert/delete policy** — rows are only created by the `notify_trade_event()` trigger |
 
 The admin bypass policies (`0007_admin_role.sql`) are read-only and additive — they grant an
 extra `select` path alongside the existing owner/participant policies rather than replacing them,

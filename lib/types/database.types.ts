@@ -15,6 +15,15 @@ export type Rarity =
 // Mirrors the `profiles.role` check constraint in supabase/migrations/0007_admin_role.sql.
 export type UserRole = "user" | "admin"
 
+// Mirrors the `notifications.type` check constraint in
+// supabase/migrations/0009_user_discovery_and_notifications.sql.
+export type NotificationType =
+  | "trade_proposed"
+  | "trade_accepted"
+  | "trade_rejected"
+  | "trade_completed"
+  | "trade_cancelled"
+
 export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
@@ -221,6 +230,58 @@ export type Database = {
             columns: ["trade_id"]
             isOneToOne: false
             referencedRelation: "trades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          id: string
+          read_at: string | null
+          trade_id: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          trade_id?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          trade_id?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_trade_id_fkey"
+            columns: ["trade_id"]
+            isOneToOne: false
+            referencedRelation: "trades"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -630,3 +691,4 @@ export type Profile = Database["public"]["Tables"]["profiles"]["Row"]
 export type Trade = Database["public"]["Tables"]["trades"]["Row"]
 export type TradeListing = Database["public"]["Tables"]["trade_listings"]["Row"]
 export type Message = Database["public"]["Tables"]["messages"]["Row"]
+export type Notification = Database["public"]["Tables"]["notifications"]["Row"]

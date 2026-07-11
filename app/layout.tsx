@@ -51,7 +51,14 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <QueryProvider>
             <SupabaseProvider>
-              <TooltipProvider>{children}</TooltipProvider>
+              <TooltipProvider>
+                <div className="flex min-h-full flex-1 flex-col">
+                  <div className="flex-1">{children}</div>
+                  <footer className="py-2 text-center text-xs text-muted-foreground">
+                    created by Bhavik G6 OIS
+                  </footer>
+                </div>
+              </TooltipProvider>
               <Toaster />
             </SupabaseProvider>
           </QueryProvider>

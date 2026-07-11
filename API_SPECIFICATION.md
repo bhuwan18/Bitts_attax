@@ -105,6 +105,29 @@ Validated against `SendMessageSchema` (body 1–2000 chars). Inserts a `messages
 Realtime broadcast that other participants' `useTradeChannel` subscription receives — see
 [SYSTEM_ARCHITECTURE.md](./SYSTEM_ARCHITECTURE.md).
 
+## User discovery (`app/(main)/traders/`)
+
+No dedicated Server Actions — `/traders` and `/traders/[userId]` are pure reads (profiles are
+publicly readable, and `inventory_items` select was opened up to public in
+[DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md#row-level-security) `0009_user_discovery_and_notifications.sql`
+specifically for this view). Proposing a trade to a discovered user reuses `proposeTrade` (above)
+unchanged — it already accepts an arbitrary `counterpartyId` with `listingId: null`.
+
+## Notifications (`app/(main)/notifications/actions.ts`)
+
+Rows in `notifications` are never inserted by a Server Action or client call — they're created
+entirely by the `notify_trade_event()` Postgres trigger on `trades` (fires on `proposeTrade`'s
+insert and on `updateTradeStatus`'s status change), see
+[DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md#notifications). The only client-writable operation is
+marking a notification read:
+
+### `markNotificationRead(id: string): Promise<void>`
+Sets `read_at = now()` on one notification. RLS restricts this to the caller's own rows.
+Revalidates `/notifications`.
+
+### `markAllNotificationsRead(): Promise<void>`
+Same, for every unread notification belonging to the caller. Revalidates `/notifications`.
+
 ## Auth
 
 Handled directly by the Supabase client SDK, not custom Server Actions:

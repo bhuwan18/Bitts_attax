@@ -2,20 +2,28 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutGrid, Repeat, User, Package, Shield } from "lucide-react";
+import { LayoutGrid, Repeat, User, Package, Shield, Users, Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useCurrentProfile } from "@/lib/queries/auth";
+import { useCurrentProfile, useCurrentUser } from "@/lib/queries/auth";
+import { useUnreadNotificationsCount } from "@/lib/queries/notifications";
+import { useNotificationsChannel } from "@/lib/realtime/useNotificationsChannel";
 
 const NAV_ITEMS = [
   { href: "/cards", label: "Cards", icon: LayoutGrid },
   { href: "/inventory", label: "Inventory", icon: Package },
   { href: "/trades", label: "Trades", icon: Repeat },
+  { href: "/traders", label: "Traders", icon: Users },
+  { href: "/notifications", label: "Inbox", icon: Bell },
   { href: "/profile", label: "Profile", icon: User },
 ];
 
 export function MobileNav() {
   const pathname = usePathname();
   const { data: profile } = useCurrentProfile();
+  const { data: user } = useCurrentUser();
+  const { data: unreadCount } = useUnreadNotificationsCount();
+  useNotificationsChannel(user?.id);
+
   const navItems =
     profile?.role === "admin"
       ? [...NAV_ITEMS, { href: "/admin", label: "Admin", icon: Shield }]
@@ -33,13 +41,16 @@ export function MobileNav() {
           >
             <span
               className={cn(
-                "flex size-9 items-center justify-center rounded-full transition-all duration-200",
+                "relative flex size-9 items-center justify-center rounded-full transition-all duration-200",
                 active
                   ? "-translate-y-0.5 bg-primary text-primary-foreground shadow-md"
                   : "text-muted-foreground"
               )}
             >
               <Icon className="size-[18px]" strokeWidth={active ? 2.5 : 2} />
+              {href === "/notifications" && !!unreadCount && (
+                <span className="absolute top-0.5 right-1 size-2 rounded-full bg-destructive ring-2 ring-card" />
+              )}
             </span>
             <span
               className={cn(

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/nav/ThemeToggle";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { Logo } from "@/components/shared/Logo";
 import { useCurrentProfile } from "@/lib/queries/auth";
 
@@ -11,6 +12,7 @@ const NAV_ITEMS = [
   { href: "/cards", label: "Cards" },
   { href: "/inventory", label: "Inventory" },
   { href: "/trades", label: "Trades" },
+  { href: "/traders", label: "Traders" },
   { href: "/profile", label: "Profile" },
 ];
 
@@ -49,6 +51,7 @@ export function DesktopHeader() {
             );
           })}
         </nav>
+        <NotificationBell />
         <ThemeToggle />
       </div>
     </header>

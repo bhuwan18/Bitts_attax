@@ -45,6 +45,32 @@ Used by: `app/(main)/trades/page.tsx` (browse), `app/(main)/trades/new/page.tsx`
 `app/(main)/trades/[tradeId]/page.tsx` (detail — renders `FairnessMeter` plus give/get badges and
 accept/decline actions).
 
+## Traders (`components/traders/`)
+
+| Component | Purpose |
+|---|---|
+| `TraderBrowseList.tsx` | Search box + list of every other user (`useTraders(search)`), each showing a Haves count (`useTraderHavesCounts()`, one query for the whole list) |
+| `TraderCard.tsx` | One trader row: avatar, display name/`@username`, Haves count, links to `/traders/[userId]` |
+| `TraderInventoryGrid.tsx` | Read-only grid of another user's Haves (image, name, team, quantity) — presentational, no owner controls (unlike `InventoryItemTile.tsx`) |
+| `ProposeTradeForm.tsx` | Two-sided picker built from each party's *actual* inventory (the caller's own `useInventory()` for "Your offer", the target's `useTraderInventory(userId)` for "Their items") rather than a global card search like `HaveWantPicker.tsx`; submits via `proposeTrade` and routes to the new trade |
+
+Used by: `app/(main)/traders/page.tsx` (browse), `app/(main)/traders/[userId]/page.tsx` (a trader's
+public profile — server-rendered profile header + Haves grid, redirects to `/profile` if the id is
+the caller's own).
+
+## Notifications (`components/notifications/`)
+
+| Component | Purpose |
+|---|---|
+| `NotificationBell.tsx` | Unread-count badge (`useUnreadNotificationsCount()`) + live updates (`useNotificationsChannel()`), links to `/notifications` — shown in `DesktopHeader.tsx` |
+| `NotificationList.tsx` | `useNotifications()` + "Mark all read" (`useMarkAllNotificationsRead()`), renders `NotificationRow`s, empty state |
+| `NotificationRow.tsx` | Per-type message text, relative timestamp, unread styling; click marks read (`markNotificationRead`) and navigates to the related `/trades/[tradeId]` |
+
+Used by: `app/(main)/notifications/page.tsx` (the inbox). `MobileNav.tsx` renders its own
+unread-dot indicator on the Inbox tab (same `useUnreadNotificationsCount()`/
+`useNotificationsChannel()` hooks) rather than embedding `NotificationBell.tsx` directly, since the
+bell's layout is desktop-specific.
+
 ## Chat (`components/chat/`)
 
 | Component | Purpose |
@@ -75,8 +101,8 @@ which redirects non-admins to `/cards` — see [DATABASE_SCHEMA.md](./DATABASE_S
 
 | Component | Purpose |
 |---|---|
-| `MobileNav.tsx` | Fixed bottom tab bar (Cards / Inventory / Trades / Profile, plus Admin for admins) — mobile only (`md:hidden`) |
-| `DesktopHeader.tsx` | Sticky top nav with the same links — desktop only (`hidden md:block`) |
+| `MobileNav.tsx` | Fixed bottom tab bar (Cards / Inventory / Trades / Traders / Inbox / Profile, plus Admin for admins) — mobile only (`md:hidden`); the Inbox tab shows its own unread dot |
+| `DesktopHeader.tsx` | Sticky top nav with the same links, plus `NotificationBell.tsx` next to `ThemeToggle` — desktop only (`hidden md:block`) |
 | `LogoutButton.tsx` | Signs out via Supabase and redirects to `/login` |
 
 Used by: `app/(main)/layout.tsx` wraps every authenticated route with both `DesktopHeader` and
@@ -100,6 +126,9 @@ Not components, but the client-side data layer every component above depends on:
 - `lib/queries/inventory.ts` — `useInventory()`, `useWantList()`, plus mutation hooks wrapping each Server Action
 - `lib/queries/trades.ts` — `useTradeListings()`, `useTrade(tradeId)`
 - `lib/queries/messages.ts` — `useMessages(tradeId)`, `useSendMessage(tradeId)`
+- `lib/queries/traders.ts` — `useTraders(search?)`, `useTraderHavesCounts()`, `useTraderProfile(userId)`, `useTraderInventory(userId)` — all reliant on the public `select` policy on `inventory_items` added in `0009_user_discovery_and_notifications.sql`
+- `lib/queries/notifications.ts` — `useNotifications()`, `useUnreadNotificationsCount()`, `useMarkNotificationRead()`, `useMarkAllNotificationsRead()`
 - `lib/queries/auth.ts` — `useCurrentUser()`, `useCurrentProfile()` (own `profiles` row, incl. `role` — used to conditionally show the Admin nav link)
 - `lib/queries/admin.ts` — `useAdminUsers()`, `useAdminRecentTrades()`, `useAdminUserActivity(userId)`, all reliant on the admin-only RLS `select` policies in `supabase/migrations/0007_admin_role.sql`
 - `lib/realtime/useTradeChannel.ts` — subscribes to the trade's chat channel and pushes inserts into the `["messages", tradeId]` query cache
+- `lib/realtime/useNotificationsChannel.ts` — subscribes to a channel-per-user (`notifications` filtered by `user_id`) and invalidates the `["notifications"]` queries on insert
