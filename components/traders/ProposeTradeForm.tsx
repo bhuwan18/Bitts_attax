@@ -3,28 +3,57 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowLeftRight, Plus, X } from "lucide-react";
+import { ArrowLeftRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { QuantityStepper } from "@/components/shared/QuantityStepper";
+import {
+  HaveWantPicker,
+  cardToOption,
+  type CardOption,
+} from "@/components/trades/HaveWantPicker";
 import { proposeTrade } from "@/app/(main)/trades/actions";
 import { useInventory } from "@/lib/queries/inventory";
-import { useTraderInventory } from "@/lib/queries/traders";
+import { useTradeDraft } from "@/components/traders/TradeDraftProvider";
+import type { TraderInventoryItem, TraderWantItem } from "@/lib/queries/traders";
 
-interface PickedItem {
-  cardId: string;
-  name: string;
-  quantity: number;
-  maxQuantity: number;
-}
+export const PROPOSE_TRADE_FORM_ID = "propose-trade";
 
-export function ProposeTradeForm({ counterpartyId }: { counterpartyId: string }) {
+export function ProposeTradeForm({
+  counterpartyId,
+  traderName,
+  traderInventory,
+  traderWants,
+}: {
+  counterpartyId: string;
+  traderName: string;
+  traderInventory: TraderInventoryItem[];
+  traderWants: TraderWantItem[];
+}) {
   const router = useRouter();
+  const { myItems, theirItems, setMyItems, setTheirItems } = useTradeDraft();
   const { data: myInventory } = useInventory();
-  const { data: theirInventory } = useTraderInventory(counterpartyId);
-
-  const [myItems, setMyItems] = useState<PickedItem[]>([]);
-  const [theirItems, setTheirItems] = useState<PickedItem[]>([]);
   const [submitting, setSubmitting] = useState(false);
+
+  const wantedByThem = new Set(traderWants.map((w) => w.card.id));
+
+  // Your cards they're actually asking for float to the top — those are the
+  // offers most likely to get a yes.
+  const myOptions: CardOption[] = (myInventory ?? [])
+    .map((i) =>
+      cardToOption(i.card, {
+        maxQuantity: i.quantity,
+        imageUrl: i.custom_image_url ?? i.card.image_url,
+      })
+    )
+    .sort(
+      (a, b) => Number(wantedByThem.has(b.cardId)) - Number(wantedByThem.has(a.cardId))
+    );
+
+  const theirOptions: CardOption[] = traderInventory.map((i) =>
+    cardToOption(i.card, {
+      maxQuantity: i.quantity,
+      imageUrl: i.custom_image_url ?? i.card.image_url,
+    })
+  );
 
   async function handleSubmit() {
     if (myItems.length === 0 && theirItems.length === 0) {
@@ -49,119 +78,45 @@ export function ProposeTradeForm({ counterpartyId }: { counterpartyId: string })
   }
 
   return (
-    <div className="flex flex-col gap-4 rounded-xl bg-card p-4 ring-1 ring-border">
+    <div
+      id={PROPOSE_TRADE_FORM_ID}
+      className="flex scroll-mt-20 flex-col gap-4 rounded-xl bg-card p-4 ring-1 ring-border"
+    >
       <p className="font-heading text-base">Propose a trade</p>
+
       <div className="grid gap-4 sm:grid-cols-[1fr_auto_1fr]">
-        <InventoryColumn
+        <HaveWantPicker
           label="Your offer"
-          available={(myInventory ?? []).map((i) => ({
-            cardId: i.card.id,
-            name: i.card.name,
-            team: i.card.team,
-            maxQuantity: i.quantity,
-          }))}
-          picked={myItems}
+          hint="Cards they want are listed first."
+          accent="success"
+          items={myItems}
           onChange={setMyItems}
+          suggestions={myOptions}
+          suggestionsLabel="From your inventory"
+          suggestionsEmpty="Your inventory is empty."
+          searchPlaceholder="Search your cards or the catalog…"
         />
-        <ArrowLeftRight className="mt-8 hidden size-4 shrink-0 text-muted-foreground sm:block" />
-        <InventoryColumn
-          label="Their items"
-          available={(theirInventory ?? []).map((i) => ({
-            cardId: i.card.id,
-            name: i.card.name,
-            team: i.card.team,
-            maxQuantity: i.quantity,
-          }))}
-          picked={theirItems}
+
+        <ArrowLeftRight className="mt-9 hidden size-4 shrink-0 self-start text-muted-foreground sm:block" />
+
+        {/* Scoped to their Haves: requesting a card they don't own would just be
+            rejected by proposeTrade, so it isn't offered as a choice. */}
+        <HaveWantPicker
+          label={`${traderName}'s cards`}
+          hint="Or tap any card in their Haves above."
+          items={theirItems}
           onChange={setTheirItems}
+          suggestions={theirOptions}
+          suggestionsLabel="From their Haves"
+          suggestionsEmpty="They have no cards listed."
+          searchPlaceholder="Search their cards…"
+          searchScope="suggestions"
         />
       </div>
+
       <Button disabled={submitting} onClick={handleSubmit} className="w-fit">
         {submitting ? "Sending…" : "Send trade request"}
       </Button>
-    </div>
-  );
-}
-
-function InventoryColumn({
-  label,
-  available,
-  picked,
-  onChange,
-}: {
-  label: string;
-  available: { cardId: string; name: string; team: string | null; maxQuantity: number }[];
-  picked: PickedItem[];
-  onChange: (items: PickedItem[]) => void;
-}) {
-  const pickable = available.filter((a) => !picked.some((p) => p.cardId === a.cardId));
-
-  function addItem(item: { cardId: string; name: string; maxQuantity: number }) {
-    onChange([
-      ...picked,
-      { cardId: item.cardId, name: item.name, quantity: 1, maxQuantity: item.maxQuantity },
-    ]);
-  }
-
-  function updateQuantity(cardId: string, quantity: number) {
-    onChange(picked.map((p) => (p.cardId === cardId ? { ...p, quantity } : p)));
-  }
-
-  function removeItem(cardId: string) {
-    onChange(picked.filter((p) => p.cardId !== cardId));
-  }
-
-  return (
-    <div className="flex flex-col gap-2">
-      <p className="text-sm font-semibold">{label}</p>
-
-      <div className="flex flex-col gap-1.5">
-        {picked.map((item) => (
-          <div
-            key={item.cardId}
-            className="flex items-center gap-2 rounded-xl bg-muted/60 p-2 pl-3 ring-1 ring-border"
-          >
-            <span className="min-w-0 flex-1 truncate text-sm">{item.name}</span>
-            <QuantityStepper
-              value={item.quantity}
-              max={item.maxQuantity}
-              onChange={(quantity) => updateQuantity(item.cardId, quantity)}
-            />
-            <Button
-              type="button"
-              size="icon-sm"
-              variant="ghost"
-              onClick={() => removeItem(item.cardId)}
-              aria-label={`Remove ${item.name}`}
-              className="text-muted-foreground hover:text-destructive"
-            >
-              <X className="size-4" />
-            </Button>
-          </div>
-        ))}
-        {picked.length === 0 && (
-          <p className="px-1 text-xs text-muted-foreground">Nothing added yet.</p>
-        )}
-      </div>
-
-      {pickable.length > 0 && (
-        <div className="flex max-h-40 flex-col divide-y divide-border overflow-y-auto rounded-xl bg-card ring-1 ring-border">
-          {pickable.map((item) => (
-            <button
-              key={item.cardId}
-              type="button"
-              className="flex items-center justify-between gap-2 p-2.5 text-left text-sm transition-colors hover:bg-accent"
-              onClick={() => addItem(item)}
-            >
-              <span className="truncate">
-                {item.name}
-                {item.team && <span className="text-muted-foreground"> — {item.team}</span>}
-              </span>
-              <Plus className="size-4 shrink-0 text-muted-foreground" />
-            </button>
-          ))}
-        </div>
-      )}
     </div>
   );
 }

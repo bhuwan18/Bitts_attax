@@ -10,7 +10,7 @@ infrastructure, not application UI. Everything else is hand-written for this app
 |---|---|
 | `HomeDashboard.tsx` | Client composition root for the Home dashboard: stat row + `StreakBanner` + `TradeMatchesWidget` + `RecentCardsRail` |
 | `StreakBanner.tsx` | Current login-streak banner (`useCurrentStreak()`), renders nothing if the streak is 0 |
-| `RecentCardsRail.tsx` | Horizontal `ScrollArea` of the newest catalog cards (`useRecentCards()`), reuses `CardTile` |
+| `RecentCardsRail.tsx` | Horizontal `ScrollArea` of the catalog's most-owned cards (`useMostOwnedCards()`), reuses `CardTile` |
 | `TradeMatchesWidget.tsx` | Top-3 trade matches (`useTradeMatches(3)`), each linking to `/traders/[userId]` |
 
 Used by: `app/(main)/page.tsx` — the authenticated landing route (`/`), a Server Component that
@@ -161,7 +161,7 @@ Both wrap the entire app in `app/layout.tsx`, alongside Shadcn's `TooltipProvide
 
 Not components, but the client-side data layer every component above depends on:
 
-- `lib/queries/cards.ts` — `useCards(filters)` (used by `HaveWantPicker`/`CardPicker`), `useCard(id)`, `useCardsInfinite(filters)` (used by `CardSearch`, paginated via `lib/queries/cardsShared.ts`), `useRecentCards(limit?)` (used by `RecentCardsRail`)
+- `lib/queries/cards.ts` — `useCards(filters)` (used by `HaveWantPicker`/`CardPicker`), `useCard(id)`, `useCardsInfinite(filters)` (used by `CardSearch`, paginated + sorted by `ovr_rating desc, owned_count desc, id asc` via `lib/queries/cardsShared.ts`), `useMostOwnedCards(limit?)` (used by `RecentCardsRail`, sorted by `owned_count desc, created_at desc`)
 - `lib/queries/inventory.ts` — `useInventory()`, `useWantList()`, plus mutation hooks wrapping each Server Action
 - `lib/queries/trades.ts` — `useTradeListings()`, `useTrade(tradeId)`, `useMyTrades()` (every trade the caller is a party to, for `MyTradesList`) — both attach a computed (not stored) `availableQuantity` per item and expose `getInsufficientTradeItems(trade)` to flag a giver's Haves having dropped below what an open trade still promises — `useMyCompletedTradesCount()` (used by `ProfileDashboard`'s stat row and `evaluateAchievements`' `trader_x3` check)
 - `lib/queries/matches.ts` — `useTradeMatches(limit?)`, wraps the `find_trade_matches()` RPC + a follow-up `profiles` lookup

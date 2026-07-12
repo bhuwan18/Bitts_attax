@@ -175,6 +175,36 @@ const RARITY_ALIASES: Record<string, (typeof RARITY_VALUES)[number]> = {
   "action highlights": "uncommon",
   "position switch": "uncommon",
   "shirt service": "uncommon",
+
+  // Topps Premier League 2026 (corinthianseller.co.uk, same site/convention).
+  "gold lions": "super_rare",
+  "chrome kings": "super_rare",
+  "big game baller limited edition": "limited",
+  "globaller limited edition": "limited",
+  "goal machine limited edition": "limited",
+  "pl hall of fame limited edition": "legend",
+  "pro partnerships": "rare",
+  "retro threads": "rare",
+  "pro precision": "rare",
+  "beast mode": "rare",
+  headlines: "uncommon",
+  "golden boot limited edition": "limited",
+  "festive freeze": "uncommon",
+  "full force": "rare",
+  "generation now": "uncommon",
+  tekkers: "rare",
+
+  // Topps UCC Superstars 2024 (corinthianseller.co.uk, same site/convention). "common",
+  // "uncommon", "rare" cardtypes on this product already match the base aliases above.
+  base: "common",
+  "image variation": "uncommon",
+  "molten rare": "super_rare",
+  "golden pixels": "super_rare",
+  "mystic limited": "limited",
+  "no limits": "super_rare",
+  showpiece: "super_rare",
+  "final boss": "legend",
+  "ucl royalty": "legend",
 };
 
 export function normalizeRarity(raw: unknown): (typeof RARITY_VALUES)[number] {

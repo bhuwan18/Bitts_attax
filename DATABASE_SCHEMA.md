@@ -37,6 +37,10 @@ Full SQL lives in `supabase/migrations/`, applied in order:
     `counterparty_completed_at`, the `confirm_trade_completion()` RPC (race-safe two-party
     confirmation), and the `transfer_trade_items()` trigger that moves traded cards between both
     parties' inventories once both confirm — see below
+16. `0016_cards_owned_count.sql` — adds `cards.owned_count` (sum of `inventory_items.quantity`
+    across all users, for a global popularity ranking) plus the `sync_card_owned_count()` trigger
+    that keeps it in sync on every `inventory_items` write, and replaces the `0005`
+    rarity/team composite indexes with versions that include `owned_count` — see below
 
 All tables live in the `public` schema. `auth.users` is Supabase-managed.
 
@@ -98,12 +102,16 @@ Canonical card catalog — public read, service-role write only.
 | `image_url` | `text` | nullable |
 | `set_name`, `season` | `text` | nullable |
 | `attributes` | `jsonb` | flexible bag for extra stat breakdowns |
+| `owned_count` | `integer` | default 0; denormalized sum of `inventory_items.quantity` across **all** users for this card, kept in sync by the `sync_card_owned_count()` trigger on `inventory_items` (`0016_cards_owned_count.sql`) — a global popularity signal, not the current user's own quantity |
 | `created_at` / `updated_at` | `timestamptz` | |
 
 Indexes: `gin (name gin_trgm_ops)` (supports `ilike` search); btree on `rarity`, `ovr_rating`,
-`team`, `position`, `set_name`; composite `(facet, ovr_rating desc, id)` on each of
-`rarity`/`team`/`position`/`set_name` for the `/cards` filtered-and-sorted "Load more" query shape.
-Requires the `pg_trgm` extension (enabled in the migration).
+`team`, `position`, `set_name`; composite `(facet, ovr_rating desc, owned_count desc, id)` on each
+of `rarity`/`team` and a plain `(ovr_rating desc, owned_count desc, id)` for the unfiltered case,
+matching the `/cards` "Load more" query's `ovr_rating desc, owned_count desc, id asc` sort
+(`0016_cards_owned_count.sql`, superseding `0005`'s two-column versions); `position`/`set_name`
+composites from `0006` are unchanged. A separate `(owned_count desc, created_at desc)` index backs
+the dashboard's "Most owned" rail. Requires the `pg_trgm` extension (enabled in the migration).
 
 RPC functions: `cards_distinct_teams()`, `cards_distinct_set_names()` — return the distinct
 non-null values of those free-text columns, used to populate the `/cards` filter panel's Team and

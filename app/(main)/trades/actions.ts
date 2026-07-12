@@ -57,6 +57,37 @@ export async function proposeTrade(input: z.infer<typeof ProposeTradeSchema>) {
     throw new Error("You can't propose a trade with yourself.");
   }
 
+  // A direct proposal (no listing) is the proposer asserting what the other
+  // person owns, read off their public inventory — so check the assertion still
+  // holds, since they could have traded the card away since the page loaded.
+  // A listing-backed proposal is the owner's own posted terms being accepted
+  // as-is; those aren't the proposer's claim to validate, and a listing may name
+  // cards the owner never held (createTradeListing lets them pick any card in
+  // the catalog, not just their inventory).
+  if (parsed.listingId === null && parsed.theirItems.length > 0) {
+    const { data: theirInventory, error: inventoryError } = await supabase
+      .from("inventory_items")
+      .select("card_id, quantity")
+      .eq("user_id", parsed.counterpartyId)
+      .in(
+        "card_id",
+        parsed.theirItems.map((i) => i.cardId)
+      );
+
+    if (inventoryError) throw new Error(inventoryError.message);
+
+    const held = new Map((theirInventory ?? []).map((i) => [i.card_id, i.quantity]));
+    const unavailable = parsed.theirItems.filter(
+      (i) => (held.get(i.cardId) ?? 0) < i.quantity
+    );
+
+    if (unavailable.length > 0) {
+      throw new Error(
+        "They don't have enough of some cards you asked for. Refresh their profile and try again."
+      );
+    }
+  }
+
   const { data: trade, error: tradeError } = await supabase
     .from("trades")
     .insert({
@@ -84,12 +115,12 @@ export async function proposeTrade(input: z.infer<typeof ProposeTradeSchema>) {
     })),
   ];
 
-  if (items.length > 0) {
-    const { error: itemsError } = await supabase.from("trade_items").insert(items);
-    if (itemsError) throw new Error(itemsError.message);
-  }
+  const { error: itemsError } = await supabase.from("trade_items").insert(items);
+  if (itemsError) throw new Error(itemsError.message);
 
   revalidatePath("/trades");
+  // The trader's profile marks cards already in an outgoing request.
+  revalidatePath(`/traders/${parsed.counterpartyId}`);
   return { tradeId: trade.id as string };
 }
 

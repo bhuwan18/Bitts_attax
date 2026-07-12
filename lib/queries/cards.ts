@@ -13,10 +13,11 @@ import type { Card } from "@/lib/types/database.types";
 
 export type { CardFilters, CardListItem };
 
-export function useCards(filters: CardFilters = {}) {
+export function useCards(filters: CardFilters = {}, options: { enabled?: boolean } = {}) {
   const supabase = useSupabase();
 
   return useQuery({
+    enabled: options.enabled ?? true,
     queryKey: ["cards", filters],
     queryFn: async (): Promise<Card[]> => {
       let query = supabase.from("cards").select("*").order("ovr_rating", { ascending: false });
@@ -49,15 +50,16 @@ export function useCardsInfinite(filters: CardFilters = {}) {
   });
 }
 
-export function useRecentCards(limit = 10) {
+export function useMostOwnedCards(limit = 10) {
   const supabase = useSupabase();
 
   return useQuery({
-    queryKey: ["cards", "recent", limit],
+    queryKey: ["cards", "most-owned", limit],
     queryFn: async (): Promise<CardListItem[]> => {
       const { data, error } = await supabase
         .from("cards")
         .select("id, name, team, rarity, ovr_rating, base_price, image_url")
+        .order("owned_count", { ascending: false })
         .order("created_at", { ascending: false })
         .limit(limit);
       if (error) throw error;

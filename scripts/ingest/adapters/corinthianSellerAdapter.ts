@@ -38,6 +38,15 @@ export interface CorinthianSellerProductConfig {
   subpagePrefix: string;
   setName: string;
   season: string;
+  // Most products' image filenames are "{prefix}-{code}-{player-slug}.png" (one code segment),
+  // which the filename-derived external_ref regex captures correctly. Some products (e.g. Topps
+  // UCC Superstars 2024) use a two-segment code instead ("uccss24-cmn-001-rafael-leao.png"), which
+  // that regex would truncate to just "cmn" — identical, non-unique, for every card in the subset.
+  // Those products also use "blank.png" placeholders for not-yet-photographed cards, which breaks
+  // filename-derived refs entirely. Card Number is reliably unique in every product seen so far, so
+  // set this to prefer it as the primary external_ref instead — kept opt-in (default: filename-code
+  // primary) so existing products' already-imported external_ref values don't change on a re-run.
+  preferCardNumberAsRef?: boolean;
 }
 
 function sleep(ms: number) {
@@ -77,17 +86,21 @@ function parseTeamPositionLine(line: string | undefined): {
 
 function parseCardBlock(
   block: string,
-  labels: Pick<CorinthianSellerProductConfig, "setName" | "season">
+  labels: Pick<CorinthianSellerProductConfig, "setName" | "season" | "preferCardNumberAsRef">
 ): RawCardRecord | null {
   const name = /alt="([^"]+)"/.exec(block)?.[1]?.trim();
   if (!name) return null;
 
   const rawSrc = /src="([^"]+)"/.exec(block)?.[1];
-  const image_url = rawSrc ? resolveUrl(rawSrc) : undefined;
+  // "blank.png" is a not-yet-photographed placeholder on some products — treat as no image
+  // rather than linking a meaningless picture.
+  const image_url = rawSrc && !/\/blank\.png$/i.test(rawSrc) ? resolveUrl(rawSrc) : undefined;
 
   const cardNumber = /Card Number:\s*([^<]+)/i.exec(block)?.[1]?.trim();
   const codeFromFilename = rawSrc ? /[a-z0-9]+-([a-z0-9]+)-/i.exec(rawSrc)?.[1] : undefined;
-  const external_ref = codeFromFilename ?? cardNumber;
+  const external_ref = labels.preferCardNumberAsRef
+    ? (cardNumber ?? codeFromFilename)
+    : (codeFromFilename ?? cardNumber);
 
   const cardtype = /class="cardtype">([^<]*)/i.exec(block)?.[1]?.trim();
 
@@ -144,7 +157,7 @@ function parseCardBlock(
 
 function parsePage(
   html: string,
-  labels: Pick<CorinthianSellerProductConfig, "setName" | "season">
+  labels: Pick<CorinthianSellerProductConfig, "setName" | "season" | "preferCardNumberAsRef">
 ): RawCardRecord[] {
   const blocks = html.match(CARD_BLOCK_PATTERN) ?? [];
   return blocks.map((block) => parseCardBlock(block, labels)).filter((r): r is RawCardRecord => r !== null);

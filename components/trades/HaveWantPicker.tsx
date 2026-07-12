@@ -49,6 +49,7 @@ export function HaveWantPicker({
   suggestionsLabel,
   suggestionsEmpty,
   searchPlaceholder = "Search the full catalog…",
+  searchScope = "catalog",
 }: {
   label: string;
   hint?: string;
@@ -60,18 +61,35 @@ export function HaveWantPicker({
   suggestionsLabel?: string;
   suggestionsEmpty?: string;
   searchPlaceholder?: string;
+  /**
+   * Where typing searches. "suggestions" narrows the given options in memory and
+   * never queries the catalog — for pickers where an arbitrary card would be an
+   * invalid choice, e.g. you can only request cards a trader actually owns.
+   */
+  searchScope?: "catalog" | "suggestions";
 }) {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
-  const { data: cards, isLoading } = useCards({ search: search || undefined });
+
+  const showingSearch = search.length > 0;
+  const searchingCatalog = showingSearch && searchScope === "catalog";
+  const { data: cards, isLoading } = useCards(
+    { search: search || undefined },
+    { enabled: searchingCatalog }
+  );
 
   const added = new Set(items.map((i) => i.cardId));
 
-  // What the dropdown shows: catalog matches while typing, suggestions otherwise.
-  const searchResults: CardOption[] = search
-    ? (cards ?? []).slice(0, 8).map((c) => cardToOption(c))
-    : [];
-  const showingSearch = search.length > 0;
+  // What the dropdown shows: matches while typing, suggestions otherwise.
+  const searchResults: CardOption[] = !showingSearch
+    ? []
+    : searchingCatalog
+      ? (cards ?? []).slice(0, 8).map((c) => cardToOption(c))
+      : suggestions
+          .filter((o) =>
+            `${o.name} ${o.team ?? ""}`.toLowerCase().includes(search.toLowerCase())
+          )
+          .slice(0, 8);
 
   function addCard(option: CardOption) {
     if (added.has(option.cardId)) return;

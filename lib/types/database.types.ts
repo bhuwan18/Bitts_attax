@@ -122,6 +122,9 @@ export type Database = {
           image_url: string | null
           name: string
           ovr_rating: number | null
+          // Hand-added ahead of `supabase gen types` regeneration — defined in
+          // supabase/migrations/0016_cards_owned_count.sql, not yet applied.
+          owned_count: number
           position: string | null
           rarity: Rarity
           season: string | null
@@ -139,6 +142,7 @@ export type Database = {
           image_url?: string | null
           name: string
           ovr_rating?: number | null
+          owned_count?: number
           position?: string | null
           rarity: Rarity
           season?: string | null
@@ -156,6 +160,7 @@ export type Database = {
           image_url?: string | null
           name?: string
           ovr_rating?: number | null
+          owned_count?: number
           position?: string | null
           rarity?: Rarity
           season?: string | null

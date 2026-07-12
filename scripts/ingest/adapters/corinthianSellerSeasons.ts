@@ -4,11 +4,32 @@ import {
   type CorinthianSellerProductConfig,
 } from "./corinthianSellerAdapter";
 
-// Additional corinthianseller.co.uk Match Attax products (last 5 seasons, main + Extra) beyond
-// the 2024/25 main set in corinthianSellerAdapter.ts. Same site, same markup, same crawl-delay —
-// see the comment at the top of that file for the reconnaissance behind this. Sub-page counts
-// verified live before adding each entry here (56/61/59/54/24/45/15/49/17 respectively).
+// Additional corinthianseller.co.uk products beyond the 2024/25 Match Attax main set in
+// corinthianSellerAdapter.ts. Same site, same markup, same crawl-delay — see the comment at the
+// top of that file for the reconnaissance behind this. Sub-page counts verified live before
+// adding each entry here.
 const PRODUCTS: CorinthianSellerProductConfig[] = [
+  {
+    id: "cheerio:corinthian-seller-topps-premier-league-2026",
+    description: "Topps Premier League 2026 checklist scraped from corinthianseller.co.uk",
+    indexUrl: "https://www.corinthianseller.co.uk/cards-topps-premier-league-2026.php",
+    subpagePrefix: "topps-premier-league-2026-cards-",
+    setName: "Topps Premier League 2026",
+    season: "2025/26",
+  },
+  {
+    id: "cheerio:corinthian-seller-topps-ucc-superstars-2024",
+    description: "Topps UCC Superstars 2024 checklist scraped from corinthianseller.co.uk",
+    indexUrl: "https://www.corinthianseller.co.uk/cards-topps-ucc-superstars-2024.php",
+    subpagePrefix: "topps-ucc-superstars-2024-cards-",
+    setName: "Topps UCC Superstars 2024",
+    season: "2024",
+    // This product's image filenames use a two-segment code ("uccss24-cmn-001-...") that the
+    // default filename-derived external_ref would truncate to just "cmn" (non-unique across all
+    // 200 Common cards), and some subsets use "blank.png" placeholders with no code at all. Card
+    // Number ("CMN1", "FB1", ...) is clean and unique here — see corinthianSellerAdapter.ts.
+    preferCardNumberAsRef: true,
+  },
   {
     id: "cheerio:corinthian-seller-matchattax-2026",
     description: "Match Attax 2025/26 checklist scraped from corinthianseller.co.uk",

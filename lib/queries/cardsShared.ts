@@ -31,9 +31,14 @@ export async function fetchCardsPage(
   let query = supabase
     .from("cards")
     .select("id, name, team, rarity, ovr_rating, base_price, image_url")
-    // ovr_rating has heavy duplicate values; tie-break by id so .range()
-    // pagination can't duplicate or skip rows across page boundaries.
+    // ovr_rating first (primary sort), then global ownership (owned_count,
+    // sum of inventory_items.quantity across all users — see migration
+    // 0016_cards_owned_count.sql) as a popularity tiebreak. ovr_rating and
+    // owned_count both have heavy duplicate values, so id stays the final
+    // tie-break — not created_at — so .range() pagination can't duplicate
+    // or skip rows across page boundaries.
     .order("ovr_rating", { ascending: false })
+    .order("owned_count", { ascending: false })
     .order("id", { ascending: true });
 
   if (filters.search) {
