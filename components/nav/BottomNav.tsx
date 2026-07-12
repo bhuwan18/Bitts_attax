@@ -2,20 +2,19 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutGrid, Repeat, User, Package, Shield, Users } from "lucide-react";
+import { Home, LayoutGrid, Repeat, User, Package, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useCurrentProfile } from "@/lib/queries/auth";
 
 // Renders at every screen size and orientation — this floating pill is the
 // app's one universal bottom nav, not a small-screen fallback for a desktop
-// sidebar. Home and Notifications live in TopBar instead — too many items in
-// this pill would be cramped regardless of viewport width, since its width
-// is capped by design (max-w-md), not by the screen. Cards is elevated into
-// its own floating button above the pill (it's the app's "hero" content —
-// the cards themselves — so it gets the star treatment, the same idea as an
-// Instagram-style floating create button, done in our own glowing-card
-// material instead of glass).
+// sidebar. Notifications and Admin both live in TopBar instead — Admin only
+// matters to a handful of users, so it doesn't need a permanent slot here.
+// Cards is elevated into its own floating button above the pill (it's the
+// app's "hero" content — the cards themselves — so it gets the star
+// treatment, the same idea as an Instagram-style floating create button,
+// done in our own glowing-card material instead of glass).
 const NAV_ITEMS = [
+  { href: "/", label: "Home", icon: Home },
   { href: "/inventory", label: "Inventory", icon: Package },
   { href: "/trades", label: "Trades", icon: Repeat },
   { href: "/traders", label: "Traders", icon: Users },
@@ -24,13 +23,6 @@ const NAV_ITEMS = [
 
 export function BottomNav() {
   const pathname = usePathname();
-  const { data: profile } = useCurrentProfile();
-
-  const navItems =
-    profile?.role === "admin"
-      ? [...NAV_ITEMS, { href: "/admin", label: "Admin", icon: Shield }]
-      : NAV_ITEMS;
-
   const cardsActive = pathname.startsWith("/cards");
 
   return (
@@ -54,8 +46,10 @@ export function BottomNav() {
       </Link>
 
       <div className="nav-float-glow flex w-full max-w-md items-stretch rounded-full bg-card px-1 py-1 ring-1 ring-foreground/10">
-        {navItems.map(({ href, label, icon: Icon }) => {
-          const active = pathname.startsWith(href);
+        {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+          // "/" needs an exact match — every route starts with "/", so
+          // startsWith would keep Home lit up everywhere.
+          const active = href === "/" ? pathname === href : pathname.startsWith(href);
           return (
             <Link
               key={href}

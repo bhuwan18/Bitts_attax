@@ -58,6 +58,9 @@ erDiagram
 
 ### `profiles`
 1:1 with `auth.users`; auto-created by the `handle_new_user()` trigger on signup.
+`display_name`/`avatar_url` prefer OAuth metadata (`full_name`/`name`/`avatar_url`/`picture` — the
+keys Google populates in `raw_user_meta_data`) over the email-address-derived fallback used for
+plain email/password signup (`0014_google_oauth_display_name.sql`).
 
 | Column | Type | Notes |
 |---|---|---|

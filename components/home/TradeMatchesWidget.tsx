@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getInitials } from "@/lib/utils";
 import { useTradeMatches } from "@/lib/queries/matches";
 
@@ -30,9 +31,14 @@ export function TradeMatchesWidget() {
                 className="animate-in fade-in-0 slide-in-from-bottom-4 fill-mode-both animation-duration-500 flex w-48 shrink-0 flex-col gap-2 rounded-2xl bg-card p-3.5 transition-transform duration-300 ease-[var(--ease-out-quint)] hover:-translate-y-1"
               >
                 <div className="flex items-center gap-2">
-                  <span className="flex size-8 items-center justify-center rounded-full bg-gradient-to-br from-primary to-brand text-xs font-extrabold text-primary-foreground">
-                    {getInitials(name)}
-                  </span>
+                  <Avatar>
+                    {match.profile.avatar_url && (
+                      <AvatarImage src={match.profile.avatar_url} alt={name} />
+                    )}
+                    <AvatarFallback className="bg-gradient-to-br from-primary to-brand text-xs font-extrabold text-primary-foreground">
+                      {getInitials(name)}
+                    </AvatarFallback>
+                  </Avatar>
                   <span className="truncate text-sm font-semibold">{name}</span>
                 </div>
                 <span className="text-xs text-muted-foreground">

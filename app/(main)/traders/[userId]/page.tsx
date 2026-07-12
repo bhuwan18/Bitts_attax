@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { StatStrip } from "@/components/shared/StatStrip";
 import { TraderInventoryGrid } from "@/components/traders/TraderInventoryGrid";
 import { TraderWantList } from "@/components/traders/TraderWantList";
@@ -44,6 +44,7 @@ export default async function TraderDetailPage({
     <div className="mx-auto flex max-w-4xl flex-col gap-6 p-4 sm:p-6">
       <div className="flex items-center gap-4">
         <Avatar className="size-16">
+          {profile.avatar_url && <AvatarImage src={profile.avatar_url} alt={name} />}
           <AvatarFallback className="bg-primary font-heading text-2xl text-primary-foreground">
             {initial}
           </AvatarFallback>

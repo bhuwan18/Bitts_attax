@@ -9,7 +9,7 @@ export interface TradeMatch {
   userId: string;
   theyHaveCount: number;
   mutual: boolean;
-  profile: Pick<Profile, "id" | "username" | "display_name">;
+  profile: Pick<Profile, "id" | "username" | "display_name" | "avatar_url">;
 }
 
 // Two round trips, not N+1: find_trade_matches() (0012_trade_matches_rpc.sql)
@@ -30,7 +30,7 @@ export function useTradeMatches(limit = 10) {
 
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
-        .select("id, username, display_name")
+        .select("id, username, display_name, avatar_url")
         .in(
           "id",
           top.map((m) => m.other_user_id)
@@ -46,6 +46,7 @@ export function useTradeMatches(limit = 10) {
           id: m.other_user_id,
           username: "collector",
           display_name: null,
+          avatar_url: null,
         },
       }));
     },

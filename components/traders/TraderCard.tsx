@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getInitials } from "@/lib/utils";
 import type { Profile } from "@/lib/types/database.types";
 import type { TradeMatch } from "@/lib/queries/matches";
@@ -21,6 +21,7 @@ export function TraderCard({
       className="flex items-center gap-3 rounded-xl bg-card p-3 ring-1 ring-border transition-all duration-300 ease-[var(--ease-out-quint)] hover:-translate-y-0.5 hover:bg-accent hover:ring-foreground/20"
     >
       <Avatar size="lg">
+        {trader.avatar_url && <AvatarImage src={trader.avatar_url} alt={name} />}
         <AvatarFallback className="bg-gradient-to-br from-primary to-brand font-heading text-primary-foreground">
           {getInitials(name)}
         </AvatarFallback>

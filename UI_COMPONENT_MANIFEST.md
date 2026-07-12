@@ -55,10 +55,11 @@ Used by: `app/(main)/inventory/page.tsx` (Tabs: Haves / Wants).
 | `HaveWantPicker.tsx` | Rich card picker (thumbnail + team + OVR), reused for both listing sides; surfaces `suggestions` (the caller passes inventory for Haves, want-list for Wants) before the user types, falls back to catalog search via `useCards`, and marks already-added cards. Exports `CardOption`/`PickedItem` + `cardToOption` |
 | `ListingPreview.tsx` | Read-only preview mirroring `TradeListingCard`'s offering/looking-for pills, shown live as the form is filled |
 | `FairnessMeter.tsx` | Renders a `FairnessResult` as a labeled progress bar (color keyed to fairness label) |
+| `MyTradesList.tsx` | `useMyTrades()` — every trade the caller is a party to (either side), newest first; give/get item badges, status badge, links to the trade detail page and its chat, and a Cancel button (`updateTradeStatus(id, "cancelled")`) shown only to the initiator while `status === "proposed"` |
 
-Used by: `app/(main)/trades/page.tsx` (browse), `app/(main)/trades/new/page.tsx` (create),
-`app/(main)/trades/[tradeId]/page.tsx` (detail — renders `FairnessMeter` plus give/get badges and
-accept/decline actions).
+Used by: `app/(main)/trades/page.tsx` (Tabs: Browse — `TradeBrowseList` — / My Trades —
+`MyTradesList`), `app/(main)/trades/new/page.tsx` (create), `app/(main)/trades/[tradeId]/page.tsx`
+(detail — renders `FairnessMeter` plus give/get badges and accept/decline actions).
 
 ## Traders (`components/traders/`)
 
@@ -134,8 +135,8 @@ replaced by this floating pill everywhere per direct feedback that it worked bet
 
 | Component | Purpose |
 |---|---|
-| `TopBar.tsx` | Sticky top bar, full-bleed background with a `max-w-3xl` centered inner row. Logo/wordmark (links to `/`) + `NotificationBell.tsx`; this is the bell's only mount point |
-| `BottomNav.tsx` | Fixed floating pill nav, inset from the screen edges (not edge-to-edge), opaque `bg-card` with a soft brand-color ambient glow (`nav-float-glow` utility) rather than translucent glassmorphism. Cards is elevated into its own separate floating glowing button above the pill (the app's "hero" content gets star billing, the same idea as an Instagram-style floating create button); the pill itself holds Inventory / Trades / Traders / Profile, plus Admin for admins |
+| `TopBar.tsx` | Sticky top bar — deliberately full-bleed (matches each page's own `px-4 sm:px-6` rather than centering in its own max-width, so the wordmark stays flush with whatever container the page below uses, which varies from `max-w-2xl` to `max-w-6xl`). Logo/wordmark (links to `/`, no active-state styling — that read as a stray chip on a brand mark) + a conditional Admin `Shield` link (only relevant to a handful of users, so it doesn't take a permanent slot in `BottomNav`) + `NotificationBell.tsx`; this is the bell's only mount point |
+| `BottomNav.tsx` | Fixed floating pill nav, inset from the screen edges (not edge-to-edge), opaque `bg-card` with a soft brand-color ambient glow (`nav-float-glow` utility) rather than translucent glassmorphism. Cards is elevated into its own separate floating glowing button above the pill (the app's "hero" content gets star billing, the same idea as an Instagram-style floating create button); the pill itself holds Home / Inventory / Trades / Traders / Profile — Home needs an exact pathname match (`href === "/"`), not `startsWith`, since every route starts with `/` |
 | `LogoutButton.tsx` | Signs out via Supabase and redirects to `/login` |
 
 Used by: `app/(main)/layout.tsx`, a simple vertical stack — `TopBar` → `<main>` (with bottom padding
@@ -160,7 +161,7 @@ Not components, but the client-side data layer every component above depends on:
 
 - `lib/queries/cards.ts` — `useCards(filters)` (used by `HaveWantPicker`/`CardPicker`), `useCard(id)`, `useCardsInfinite(filters)` (used by `CardSearch`, paginated via `lib/queries/cardsShared.ts`), `useRecentCards(limit?)` (used by `RecentCardsRail`)
 - `lib/queries/inventory.ts` — `useInventory()`, `useWantList()`, plus mutation hooks wrapping each Server Action
-- `lib/queries/trades.ts` — `useTradeListings()`, `useTrade(tradeId)`, `useMyCompletedTradesCount()` (used by `ProfileDashboard`'s stat row and `evaluateAchievements`' `trader_x3` check)
+- `lib/queries/trades.ts` — `useTradeListings()`, `useTrade(tradeId)`, `useMyTrades()` (every trade the caller is a party to, for `MyTradesList`), `useMyCompletedTradesCount()` (used by `ProfileDashboard`'s stat row and `evaluateAchievements`' `trader_x3` check)
 - `lib/queries/matches.ts` — `useTradeMatches(limit?)`, wraps the `find_trade_matches()` RPC + a follow-up `profiles` lookup
 - `lib/queries/gamification.ts` — `useCurrentStreak()`, `useAchievements()` (public catalog), `useUnlockedAchievements()`
 - `lib/queries/messages.ts` — `useMessages(tradeId)`, `useSendMessage(tradeId)`

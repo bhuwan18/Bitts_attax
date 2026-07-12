@@ -75,3 +75,25 @@ export function useTrade(tradeId: string) {
     enabled: !!tradeId,
   });
 }
+
+export function useMyTrades() {
+  const supabase = useSupabase();
+  const { data: user } = useCurrentUser();
+
+  return useQuery({
+    queryKey: ["myTrades", user?.id],
+    queryFn: async (): Promise<TradeWithDetails[]> => {
+      const { data, error } = await supabase
+        .from("trades")
+        .select(
+          "*, initiator:profiles!trades_initiator_id_fkey(id, username, display_name), counterparty:profiles!trades_counterparty_id_fkey(id, username, display_name), items:trade_items(offered_by, quantity, card:cards(*))"
+        )
+        .or(`initiator_id.eq.${user!.id},counterparty_id.eq.${user!.id}`)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return (data ?? []) as unknown as TradeWithDetails[];
+    },
+    enabled: !!user,
+  });
+}

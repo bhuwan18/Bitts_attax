@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Users } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getInitials } from "@/lib/utils";
 import { useTraders, useTraderHavesCounts } from "@/lib/queries/traders";
 
@@ -35,9 +36,12 @@ export function TradersSpotlight() {
               style={{ animationDelay: `${i * 40}ms` }}
               className="animate-in fade-in-0 slide-in-from-bottom-4 fill-mode-both animation-duration-400 flex items-center gap-2.5 rounded-2xl bg-card p-3 transition-transform duration-300 ease-[var(--ease-out-quint)] hover:-translate-y-1"
             >
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-brand text-xs font-extrabold text-primary-foreground">
-                {getInitials(name)}
-              </span>
+              <Avatar className="size-9 shrink-0">
+                {trader.avatar_url && <AvatarImage src={trader.avatar_url} alt={name} />}
+                <AvatarFallback className="bg-gradient-to-br from-primary to-brand text-xs font-extrabold text-primary-foreground">
+                  {getInitials(name)}
+                </AvatarFallback>
+              </Avatar>
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold">{name}</p>
                 <p className="flex items-center gap-1 truncate text-xs text-muted-foreground">
