@@ -5,23 +5,10 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import type { TablesInsert } from "@/lib/types/database.types";
 import { evaluateAchievements } from "@/app/(main)/gamification/actions";
+import { EXTENSION_BY_MIME, ImageFileSchema } from "@/lib/validation/image.schema";
 
 const UuidSchema = z.uuid();
 const QuantitySchema = z.number().int().min(1).max(999);
-
-const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
-const EXTENSION_BY_MIME: Record<string, string> = {
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/webp": "webp",
-  "image/heic": "heic",
-  "image/heif": "heif",
-};
-
-const ImageFileSchema = z
-  .instanceof(File)
-  .refine((file) => file.size > 0 && file.size <= MAX_IMAGE_BYTES, "Image must be 8MB or smaller.")
-  .refine((file) => file.type in EXTENSION_BY_MIME, "Unsupported image type.");
 
 async function requireUser() {
   const supabase = await createClient();

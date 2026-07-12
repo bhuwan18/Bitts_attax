@@ -661,6 +661,34 @@ export type Database = {
         Returns: { other_user_id: string; they_have_count: number; mutual: boolean }[]
       }
       // Hand-added ahead of `supabase gen types` regeneration — defined in
+      // supabase/migrations/0017_match_cards_by_text.sql, not yet applied.
+      match_cards_by_text: {
+        Args: {
+          p_name: string
+          p_team?: string | null
+          p_set_name?: string | null
+          match_count?: number
+        }
+        Returns: {
+          attributes: Json
+          base_price: number | null
+          created_at: string
+          external_ref: string | null
+          id: string
+          image_url: string | null
+          name: string
+          ovr_rating: number | null
+          owned_count: number
+          position: string | null
+          rarity: Rarity
+          season: string | null
+          set_name: string | null
+          source: string
+          team: string | null
+          updated_at: string
+        }[]
+      }
+      // Hand-added ahead of `supabase gen types` regeneration — defined in
       // supabase/migrations/0015_trade_completion_confirmations.sql.
       confirm_trade_completion: {
         Args: { p_trade_id: string }

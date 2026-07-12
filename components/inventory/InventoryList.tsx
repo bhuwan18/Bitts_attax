@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { PackageOpen } from "lucide-react";
 import { CardPicker } from "@/components/inventory/CardPicker";
+import { ScanCardDialog } from "@/components/inventory/ScanCardDialog";
 import { InventoryItemRow } from "@/components/inventory/InventoryItemRow";
 import { InventoryItemTile } from "@/components/inventory/InventoryItemTile";
 import { InventoryViewToggle, type InventoryView } from "@/components/inventory/InventoryViewToggle";
@@ -23,18 +24,21 @@ export function InventoryList() {
 
   return (
     <div className="flex flex-col gap-4">
-      <CardPicker
-        addLabel="Add to Haves"
-        isAdding={addMutation.isPending}
-        onAdd={(cardId) =>
-          addMutation.mutate(
-            { cardId },
-            {
-              onError: (error) => toast.error(error.message),
-            }
-          )
-        }
-      />
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+        <CardPicker
+          addLabel="Add to Haves"
+          isAdding={addMutation.isPending}
+          onAdd={(cardId) =>
+            addMutation.mutate(
+              { cardId },
+              {
+                onError: (error) => toast.error(error.message),
+              }
+            )
+          }
+        />
+        <ScanCardDialog />
+      </div>
       {isLoading && <p className="text-sm text-muted-foreground">Loading your collection…</p>}
       {!isLoading && items?.length === 0 && (
         <div className="flex flex-col items-center gap-2 rounded-xl bg-muted/60 py-10 text-center">
