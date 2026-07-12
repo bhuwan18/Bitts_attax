@@ -55,10 +55,10 @@ export default function TradeDetailPage({ params }: { params: Promise<{ tradeId:
   return (
     <div className="mx-auto flex max-w-lg flex-col gap-5 p-4 sm:p-6">
       <div className="flex items-center justify-between">
-        <h1 className="font-heading text-3xl font-extrabold tracking-tight">Trade</h1>
+        <h1 className="font-heading text-3xl tracking-tight">Trade</h1>
         <span
           className={cn(
-            "rounded-full px-2.5 py-1 font-heading text-xs font-bold tracking-wide uppercase",
+            "rounded-full px-2.5 py-1 font-sans text-xs font-extrabold tracking-wide uppercase",
             TRADE_STATUS_STYLE[trade.status] ?? "bg-muted text-muted-foreground"
           )}
         >

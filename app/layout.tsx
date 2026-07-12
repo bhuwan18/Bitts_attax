@@ -1,21 +1,26 @@
 import type { Metadata, Viewport } from "next";
-import { Space_Grotesk, Inter } from "next/font/google";
+import { Bungee, Manrope } from "next/font/google";
 import "./globals.css";
 import { QueryProvider } from "@/components/providers/QueryProvider";
 import { SupabaseProvider } from "@/components/providers/SupabaseProvider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 
-const headingFont = Space_Grotesk({
+// Bungee: chunky, blocky, stadium-scoreboard/foil-sticker energy — reserved
+// for display headlines and big numbers (OVR, stats, level), never body
+// copy. Only ships weight 400 (it's a single-weight display face).
+const headingFont = Bungee({
   variable: "--font-heading",
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
+  weight: "400",
 });
 
-const bodyFont = Inter({
+// Manrope: warm, clean humanist sans for body/UI text — enough contrast
+// against Bungee's geometric weight to stay readable at length.
+const bodyFont = Manrope({
   variable: "--font-sans",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 export const metadata: Metadata = {

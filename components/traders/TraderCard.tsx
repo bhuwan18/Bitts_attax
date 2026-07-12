@@ -18,10 +18,10 @@ export function TraderCard({
   return (
     <Link
       href={`/traders/${trader.id}`}
-      className="flex items-center gap-3 rounded-xl bg-card p-3 ring-1 ring-border transition-colors hover:bg-accent"
+      className="flex items-center gap-3 rounded-xl bg-card p-3 ring-1 ring-border transition-all duration-300 ease-[var(--ease-out-quint)] hover:-translate-y-0.5 hover:bg-accent hover:ring-foreground/20"
     >
       <Avatar size="lg">
-        <AvatarFallback className="bg-gradient-to-br from-primary to-brand font-heading font-extrabold text-primary-foreground">
+        <AvatarFallback className="bg-gradient-to-br from-primary to-brand font-heading text-primary-foreground">
           {getInitials(name)}
         </AvatarFallback>
       </Avatar>

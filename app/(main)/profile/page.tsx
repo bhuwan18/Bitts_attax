@@ -23,14 +23,14 @@ export default async function ProfilePage() {
 
   return (
     <div className="mx-auto flex max-w-md flex-col gap-6 p-4 sm:p-6">
-      <div className="flex items-center gap-4">
-        <Avatar className="size-16">
-          <AvatarFallback className="bg-gradient-to-br from-primary to-brand font-heading text-xl font-extrabold text-primary-foreground">
+      <div className="animate-in fade-in-0 slide-in-from-bottom-4 animation-duration-500 flex items-center gap-4">
+        <Avatar className="size-20">
+          <AvatarFallback className="bg-gradient-to-br from-primary to-brand font-heading text-2xl text-primary-foreground">
             {getInitials(name)}
           </AvatarFallback>
         </Avatar>
         <div>
-          <h1 className="font-heading text-2xl font-extrabold tracking-tight">{name}</h1>
+          <h1 className="font-heading text-3xl leading-tight tracking-tight">{name}</h1>
           {profile?.username && (
             <p className="text-sm text-muted-foreground">@{profile.username}</p>
           )}

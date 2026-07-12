@@ -23,9 +23,7 @@ export function FairnessMeter({ result }: { result: FairnessResult }) {
   return (
     <div className="flex items-center gap-4 rounded-xl bg-card p-4 ring-1 ring-border">
       <div className="flex shrink-0 flex-col items-center leading-none">
-        <span className="font-heading text-4xl font-extrabold tabular-nums">
-          {result.score.toFixed(0)}
-        </span>
+        <span className="font-heading text-4xl tabular-nums">{result.score.toFixed(0)}</span>
         <span className="mt-0.5 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
           / 100
         </span>
@@ -35,7 +33,7 @@ export function FairnessMeter({ result }: { result: FairnessResult }) {
           <span className="text-sm font-semibold">Fairness score</span>
           <span
             className={cn(
-              "rounded-full px-2 py-0.5 font-heading text-[10px] font-bold tracking-wide uppercase",
+              "rounded-full px-2 py-0.5 font-sans text-[10px] font-extrabold tracking-wide uppercase",
               style.chip
             )}
           >

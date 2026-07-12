@@ -18,7 +18,7 @@ export default function TradeChatPage({ params }: { params: Promise<{ tradeId: s
         >
           <ArrowLeft className="size-4" />
         </Link>
-        <h1 className="font-heading text-sm font-bold tracking-wide uppercase">Trade chat</h1>
+        <h1 className="font-sans text-sm font-extrabold tracking-wide uppercase">Trade chat</h1>
       </div>
       <ChatInterface tradeId={tradeId} />
     </div>

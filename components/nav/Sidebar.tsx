@@ -67,7 +67,7 @@ export function Sidebar() {
         href="/profile"
         className="mt-auto flex items-center gap-2.5 rounded-lg px-2 py-2 hover:bg-sidebar-accent"
       >
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-brand font-heading text-xs font-bold text-primary-foreground">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-brand font-sans text-xs font-extrabold text-primary-foreground">
           {initials}
         </span>
         <span className="truncate text-sm font-semibold text-sidebar-foreground">{name}</span>

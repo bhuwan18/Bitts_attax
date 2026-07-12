@@ -20,9 +20,9 @@ export default async function HomePage() {
 
   return (
     <div className="mx-auto max-w-5xl">
-      <div className="px-4 pt-5 sm:px-6">
-        <p className="text-sm text-muted-foreground">Welcome back,</p>
-        <h1 className="font-heading text-2xl font-bold">{name}</h1>
+      <div className="animate-in fade-in-0 slide-in-from-bottom-4 animation-duration-500 px-4 pt-6 sm:px-6">
+        <p className="text-sm font-semibold text-muted-foreground">Welcome back,</p>
+        <h1 className="font-heading text-3xl leading-tight sm:text-4xl">{name}</h1>
       </div>
       <HomeDashboard />
     </div>

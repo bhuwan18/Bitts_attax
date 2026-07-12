@@ -74,7 +74,7 @@ export default async function CardDetailPage({
             </div>
           )}
           {card.ovr_rating != null && (
-            <div className="absolute top-0 left-0 rounded-lg bg-foreground/85 px-3 py-1.5 font-heading text-2xl leading-none font-extrabold text-background backdrop-blur-sm">
+            <div className="absolute top-0 left-0 rounded-lg bg-foreground/90 px-3.5 py-2 font-heading text-3xl leading-none text-background backdrop-blur-sm">
               {card.ovr_rating}
             </div>
           )}
@@ -89,13 +89,13 @@ export default async function CardDetailPage({
           <div>
             <span
               className={cn(
-                "mb-2 inline-block rounded-full px-2.5 py-1 font-heading text-xs font-bold tracking-wide uppercase",
+                "mb-2 inline-block rounded-full px-2.5 py-1 font-sans text-xs font-extrabold tracking-wide uppercase",
                 RARITY_STYLE[card.rarity] ?? RARITY_STYLE.other
               )}
             >
               {RARITY_LABEL[card.rarity] ?? card.rarity}
             </span>
-            <h1 className="font-heading text-4xl leading-[0.95] font-extrabold tracking-tight">
+            <h1 className="font-heading text-4xl leading-[0.95] tracking-tight">
               {card.name}
             </h1>
             <p className="mt-1 text-muted-foreground">{card.team ?? "Free agent"}</p>

@@ -38,13 +38,18 @@ export function TraderBrowseList() {
       )}
 
       <div className="flex flex-col gap-2">
-        {traders?.map((trader) => (
-          <TraderCard
+        {traders?.map((trader, i) => (
+          <div
             key={trader.id}
-            trader={trader}
-            havesCount={havesCounts?.[trader.id] ?? 0}
-            match={matchByUserId.get(trader.id)}
-          />
+            style={{ animationDelay: `${(i % 10) * 35}ms` }}
+            className="animate-in fade-in-0 slide-in-from-bottom-4 fill-mode-both animation-duration-400"
+          >
+            <TraderCard
+              trader={trader}
+              havesCount={havesCounts?.[trader.id] ?? 0}
+              match={matchByUserId.get(trader.id)}
+            />
+          </div>
         ))}
       </div>
     </div>

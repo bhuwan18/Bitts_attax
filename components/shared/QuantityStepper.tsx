@@ -29,7 +29,7 @@ export function QuantityStepper({
       >
         <Minus className="size-3.5" />
       </Button>
-      <span className="w-7 text-center font-heading text-sm font-bold tabular-nums">{value}</span>
+      <span className="w-7 text-center font-sans text-sm font-extrabold tabular-nums">{value}</span>
       <Button
         type="button"
         variant="ghost"

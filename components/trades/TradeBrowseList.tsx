@@ -22,8 +22,14 @@ export function TradeBrowseList({ currentUserId }: { currentUserId: string | nul
 
   return (
     <div className="flex flex-col gap-3">
-      {listings.map((listing) => (
-        <TradeListingCard key={listing.id} listing={listing} currentUserId={currentUserId} />
+      {listings.map((listing, i) => (
+        <div
+          key={listing.id}
+          style={{ animationDelay: `${(i % 10) * 35}ms` }}
+          className="animate-in fade-in-0 slide-in-from-bottom-4 fill-mode-both animation-duration-400"
+        >
+          <TradeListingCard listing={listing} currentUserId={currentUserId} />
+        </div>
       ))}
     </div>
   );

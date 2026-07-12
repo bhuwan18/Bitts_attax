@@ -21,7 +21,7 @@ export function InventoryItemTile({
   const imageUrl = item.custom_image_url ?? item.card.image_url;
 
   return (
-    <div className="flex flex-col gap-2 rounded-lg bg-card p-2">
+    <div className="flex flex-col gap-2 rounded-lg bg-card p-2 transition-transform duration-300 ease-[var(--ease-out-quint)] hover:-translate-y-1 hover:scale-[1.02]">
       <div
         className={cn(
           "card-surface-gradient relative aspect-[3/4] w-full overflow-hidden rounded-lg border-2",

@@ -43,8 +43,8 @@ export function TradeListingCard({
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl bg-card p-4 ring-1 ring-border">
-      <p className="font-heading text-base font-bold">
+    <div className="flex flex-col gap-3 rounded-xl bg-card p-4 ring-1 ring-border transition-all duration-300 ease-[var(--ease-out-quint)] hover:-translate-y-0.5 hover:ring-foreground/20">
+      <p className="font-heading text-base">
         {listing.title || `${listing.owner?.display_name ?? listing.owner?.username}'s listing`}
       </p>
       <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-3">

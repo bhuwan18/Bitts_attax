@@ -134,29 +134,63 @@
 }
 
 /* Rarity glow — escalating radius/opacity by tier so higher rarity reads as
-   "more glow." Reuses foil-sheen's color-mix(in oklch, ...) technique. */
+   "more glow," not just a bigger chip. Each tier sets --glow-c so a single
+   shared hover rule (below) can intensify any of them uniformly. The top two
+   tiers (legend/limited) additionally pulse ambiently — a card worth
+   bragging about should announce itself, not sit static. */
 @utility rarity-glow-common {
-  box-shadow: 0 0 20px color-mix(in oklch, var(--rarity-common) 30%, transparent);
+  --glow-c: var(--rarity-common);
+  box-shadow: 0 0 22px color-mix(in oklch, var(--glow-c) 35%, transparent);
 }
 @utility rarity-glow-uncommon {
-  box-shadow: 0 0 20px color-mix(in oklch, var(--rarity-uncommon) 32%, transparent);
+  --glow-c: var(--rarity-uncommon);
+  box-shadow: 0 0 22px color-mix(in oklch, var(--glow-c) 38%, transparent);
 }
 @utility rarity-glow-rare {
-  box-shadow: 0 0 24px color-mix(in oklch, var(--rarity-rare) 38%, transparent);
+  --glow-c: var(--rarity-rare);
+  box-shadow: 0 0 28px color-mix(in oklch, var(--glow-c) 48%, transparent);
 }
 @utility rarity-glow-super-rare {
-  box-shadow: 0 0 24px color-mix(in oklch, var(--rarity-super-rare) 38%, transparent);
+  --glow-c: var(--rarity-super-rare);
+  box-shadow: 0 0 28px color-mix(in oklch, var(--glow-c) 48%, transparent);
 }
 @utility rarity-glow-legend {
-  box-shadow: 0 0 28px color-mix(in oklch, var(--rarity-legend) 42%, transparent);
+  --glow-c: var(--rarity-legend);
+  animation: rarity-pulse 2.6s ease-in-out infinite;
 }
 @utility rarity-glow-limited {
-  box-shadow: 0 0 30px color-mix(in oklch, var(--rarity-limited) 45%, transparent);
+  --glow-c: var(--rarity-limited);
+  animation: rarity-pulse-strong 2.6s ease-in-out infinite;
 }
 
-/* Trading-card surface — a subtle diagonal gradient instead of a flat card fill. */
+@keyframes rarity-pulse {
+  0%, 100% { box-shadow: 0 0 30px color-mix(in oklch, var(--glow-c) 52%, transparent); }
+  50% { box-shadow: 0 0 46px color-mix(in oklch, var(--glow-c) 70%, transparent); }
+}
+@keyframes rarity-pulse-strong {
+  0%, 100% { box-shadow: 0 0 34px color-mix(in oklch, var(--glow-c) 58%, transparent); }
+  50% { box-shadow: 0 0 54px color-mix(in oklch, var(--glow-c) 78%, transparent); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rarity-glow-legend {
+    animation: none;
+    box-shadow: 0 0 30px color-mix(in oklch, var(--rarity-legend) 52%, transparent);
+  }
+  .rarity-glow-limited {
+    animation: none;
+    box-shadow: 0 0 34px color-mix(in oklch, var(--rarity-limited) 58%, transparent);
+  }
+}
+
+/* Trading-card surface — a subtle diagonal gradient instead of a flat card fill.
+   Also the shared hover-intensify hook for every rarity-glow-* tile (see above). */
 @utility card-surface-gradient {
   background: linear-gradient(160deg, oklch(0.28 0.021 248.6), oklch(0.227 0.017 248.6));
+  transition: box-shadow 0.25s var(--ease-out-quint, cubic-bezier(0.22, 1, 0.36, 1));
+}
+.card-surface-gradient:hover {
+  box-shadow: 0 0 46px color-mix(in oklch, var(--glow-c, var(--rarity-common)) 65%, transparent);
 }
 
 /* Foil sweep for legend/limited rarity — a hover-triggered diagonal sheen,
@@ -221,5 +255,57 @@
 @media (prefers-reduced-motion: reduce) {
   .animate-card-float {
     animation: none;
+  }
+}
+
+/* Radar-ping ambient pulse for the streak flame — a spreading, fading ring
+   rather than a glow-intensity pulse, so it reads as "alive" without
+   fighting the rarity-glow language used on cards. */
+@keyframes pulse-glow-warning {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in oklch, var(--warning) 45%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 12px color-mix(in oklch, var(--warning) 0%, transparent);
+  }
+}
+@utility pulse-glow-warning {
+  animation: pulse-glow-warning 2s ease-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pulse-glow-warning {
+    animation: none;
+  }
+}
+
+/* Shared easing tokens for entrance/feedback motion — ease-out-quint/expo,
+   never bounce/elastic (reads as dated; real objects decelerate smoothly). */
+:root {
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Achievement/streak celebration burst — a handful of particles flung
+   outward from center and faded, not a canvas confetti library. One-shot,
+   not looping. See components/gamification/CelebrationBurst.tsx. */
+@keyframes celebration-burst {
+  0% {
+    transform: rotate(var(--angle, 0deg)) translateY(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(var(--angle, 0deg)) translateY(-130px) scale(0);
+    opacity: 0;
+  }
+}
+
+@utility celebration-particle {
+  animation: celebration-burst 750ms var(--ease-out-quint) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .celebration-particle {
+    animation: none;
+    display: none;
   }
 }

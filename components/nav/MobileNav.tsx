@@ -47,7 +47,7 @@ export function MobileNav() {
             </span>
             <span
               className={cn(
-                "font-heading text-[11px] font-semibold uppercase tracking-wide transition-colors",
+                "font-sans text-[11px] font-extrabold uppercase tracking-wide transition-colors",
                 active ? "text-foreground" : "text-muted-foreground"
               )}
             >

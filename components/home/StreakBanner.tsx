@@ -9,14 +9,18 @@ export function StreakBanner() {
   if (!streak) return null;
 
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-warning/25 bg-warning/8 px-4 py-2.5">
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-warning text-warning-foreground">
-        <Flame className="size-5" strokeWidth={2.5} />
+    <div className="flex items-center gap-4 rounded-2xl border border-warning/30 bg-warning/10 p-4">
+      <span className="relative flex size-14 shrink-0 items-center justify-center rounded-2xl bg-warning text-warning-foreground">
+        <span className="pulse-glow-warning absolute inset-0 rounded-2xl" aria-hidden="true" />
+        <Flame className="relative size-7" strokeWidth={2.5} />
       </span>
-      <p className="text-sm leading-tight">
-        <span className="font-heading font-bold">{streak}-day streak.</span>{" "}
-        <span className="text-muted-foreground">Open the app tomorrow to keep it going.</span>
-      </p>
+      <div className="flex items-baseline gap-2">
+        <span className="font-heading text-4xl leading-none text-warning">{streak}</span>
+        <p className="text-sm leading-tight">
+          <span className="font-extrabold">day streak.</span>{" "}
+          <span className="text-muted-foreground">Come back tomorrow to keep it alive.</span>
+        </p>
+      </div>
     </div>
   );
 }

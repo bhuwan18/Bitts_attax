@@ -15,13 +15,14 @@ export function ProfileDashboard() {
   const totalCards = inventory?.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6">
       <LevelProgress uniqueCardsOwned={uniqueCards} />
       <StatStrip
+        size="lg"
         items={[
-          { label: "Total cards", value: totalCards },
-          { label: "Unique", value: uniqueCards },
-          { label: "Trades done", value: tradesCompleted ?? 0 },
+          { label: "Total cards", value: totalCards, accent: "text-primary" },
+          { label: "Unique", value: uniqueCards, accent: "text-warning" },
+          { label: "Trades done", value: tradesCompleted ?? 0, accent: "text-brand" },
         ]}
       />
       <AchievementBadgeGrid />

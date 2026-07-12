@@ -17,7 +17,7 @@ export function CardTile({ card, priority = false }: { card: CardListItem; prior
     <Link href={`/cards/${card.id}`} className="group block">
       <div
         className={cn(
-          "flex h-full flex-col overflow-hidden rounded-lg bg-card transition-all duration-200 group-hover:-translate-y-1 group-hover:shadow-lg",
+          "flex h-full flex-col overflow-hidden rounded-lg bg-card transition-transform duration-300 ease-[var(--ease-out-quint)] group-hover:-translate-y-1.5 group-hover:scale-[1.03]",
           foil && "foil-sheen"
         )}
       >
@@ -43,7 +43,7 @@ export function CardTile({ card, priority = false }: { card: CardListItem; prior
             </div>
           )}
           {card.ovr_rating != null && (
-            <div className="absolute top-0 left-0 rounded-lg bg-foreground/85 px-2 py-1 font-heading text-base leading-none font-extrabold text-background backdrop-blur-sm">
+            <div className="absolute top-0 left-0 rounded-lg bg-foreground/90 px-2.5 py-1.5 font-heading text-lg leading-none text-background backdrop-blur-sm">
               {card.ovr_rating}
             </div>
           )}
@@ -54,7 +54,7 @@ export function CardTile({ card, priority = false }: { card: CardListItem; prior
           <div className="mt-auto flex items-center justify-between gap-1 pt-1.5">
             <span
               className={cn(
-                "rounded-full px-2 py-0.5 font-heading text-[10px] font-bold tracking-wide uppercase",
+                "rounded-full px-2 py-0.5 font-sans text-[10px] font-extrabold tracking-wide uppercase",
                 RARITY_STYLE[card.rarity] ?? RARITY_STYLE.other
               )}
             >
