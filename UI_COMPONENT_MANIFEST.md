@@ -51,8 +51,9 @@ Used by: `app/(main)/inventory/page.tsx` (Tabs: Haves / Wants).
 |---|---|
 | `TradeListingCard.tsx` | One browsable listing: haves/wants badges, "Propose Trade" button (calls `proposeTrade`) |
 | `TradeBrowseList.tsx` | Fetches and renders all open listings via `useTradeListings()` |
-| `TradeListingForm.tsx` | Create-listing form: title + two `HaveWantPicker`s, calls `createTradeListing` |
-| `HaveWantPicker.tsx` | Search + quantity-editable list, reused for both the "haves" and "wants" side of a listing |
+| `TradeListingForm.tsx` | Create-listing form: two `HaveWantPicker`s (offer/want) first, then a value-balance hint, a live `ListingPreview`, an optional title, and a requirement-gated submit; calls `createTradeListing` |
+| `HaveWantPicker.tsx` | Rich card picker (thumbnail + team + OVR), reused for both listing sides; surfaces `suggestions` (the caller passes inventory for Haves, want-list for Wants) before the user types, falls back to catalog search via `useCards`, and marks already-added cards. Exports `CardOption`/`PickedItem` + `cardToOption` |
+| `ListingPreview.tsx` | Read-only preview mirroring `TradeListingCard`'s offering/looking-for pills, shown live as the form is filled |
 | `FairnessMeter.tsx` | Renders a `FairnessResult` as a labeled progress bar (color keyed to fairness label) |
 
 Used by: `app/(main)/trades/page.tsx` (browse), `app/(main)/trades/new/page.tsx` (create),

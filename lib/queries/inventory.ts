@@ -82,11 +82,25 @@ export function useAddToInventory() {
 }
 
 export function useUpdateInventoryQuantity() {
+  const queryClient = useQueryClient();
   const invalidate = useInvalidateInventory();
   return useMutation({
     mutationFn: ({ itemId, quantity }: { itemId: string; quantity: number }) =>
       updateInventoryQuantity(itemId, quantity),
-    onSuccess: invalidate,
+    onMutate: async ({ itemId, quantity }) => {
+      await queryClient.cancelQueries({ queryKey: ["inventory"] });
+      const previousItems = queryClient.getQueryData<InventoryItemWithCard[]>(["inventory"]);
+      queryClient.setQueryData<InventoryItemWithCard[]>(["inventory"], (items) =>
+        items?.map((item) => (item.id === itemId ? { ...item, quantity } : item))
+      );
+      return { previousItems };
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previousItems) {
+        queryClient.setQueryData(["inventory"], context.previousItems);
+      }
+    },
+    onSettled: invalidate,
   });
 }
 
