@@ -21,6 +21,12 @@ Full SQL lives in `supabase/migrations/`, applied in order:
 10. `0010_want_items_public_read.sql` — adds a public `select` policy on `want_items`, same
     additive technique as `0009`'s `inventory_items` policy, so a trader's profile can show what
     they're looking for alongside their Haves
+11. `0011_gamification_activity_and_achievements.sql` — adds `activity_log` (one row per user per
+    calendar day, backing login-streak computation), `achievements` (a static catalog, seeded), and
+    `user_achievements` (a permanent per-user unlock ledger)
+12. `0012_trade_matches_rpc.sql` — adds the `find_trade_matches()` RPC, a single-round-trip
+    set-intersection query over the already-public `inventory_items`/`want_items` (same
+    `postgrest-js` limitation `cards_distinct_teams()` et al. work around in `0006`)
 
 All tables live in the `public` schema. `auth.users` is Supabase-managed.
 
@@ -43,6 +49,9 @@ erDiagram
     TRADE_LISTINGS ||--o{ TRADES : "may originate"
     TRADES ||--o{ TRADE_ITEMS : has
     TRADES ||--o{ MESSAGES : has
+    PROFILES ||--o{ ACTIVITY_LOG : logs
+    PROFILES ||--o{ USER_ACHIEVEMENTS : unlocks
+    ACHIEVEMENTS ||--o{ USER_ACHIEVEMENTS : "unlocked as"
 ```
 
 ## Tables
@@ -210,6 +219,60 @@ Table-driven weights so the fairness heuristic is tunable without a code deploy.
 Seeded with a `key='default'` row in `0003_fairness_config_seed.sql` so the fairness function
 always has a config to read.
 
+### `activity_log`
+One row per user per calendar day, backing the login-streak feature (`lib/gamification/streak.ts`
+turns a set of dates into a "current consecutive-day streak" count). `activity_date` is written from
+the *client's* local date (see `app/(main)/gamification/actions.ts`'s `recordDailyActivity`), not
+server UTC, so a session near midnight lands on the calendar day the user actually experienced.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | `uuid` PK | |
+| `user_id` | `uuid` | → `profiles(id)` |
+| `activity_date` | `date` | default today (UTC, but normally overridden by the caller) |
+| `created_at` | `timestamptz` | default `now()` |
+
+Unique on `(user_id, activity_date)` — a second visit the same day is a no-op upsert
+(`ignoreDuplicates: true`), not a second row.
+
+### `achievements`
+Static catalog, service-role-seeded, publicly readable. Icon choice is resolved client-side by id
+(`components/profile/AchievementBadgeGrid.tsx`), not stored here.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | `text` PK | e.g. `first_trade`, `rare_hunter`, `streak_5`, `trader_x3` |
+| `name` | `text` | display name |
+| `description` | `text` | display description |
+| `sort_order` | `smallint` | default 0 |
+| `created_at` | `timestamptz` | default `now()` |
+
+### `user_achievements`
+Permanent unlock ledger — insert-only, never updated or deleted once earned. Evaluated by
+`evaluateAchievements()` (`app/(main)/gamification/actions.ts`) against real counts (completed
+trades, rarity ownership, streak length), called after key events (trade completed, card added,
+daily activity recorded) plus once per Profile page visit as a safety net.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | `uuid` PK | |
+| `user_id` | `uuid` | → `profiles(id)` |
+| `achievement_id` | `text` | → `achievements(id)` |
+| `unlocked_at` | `timestamptz` | default `now()` |
+
+Unique on `(user_id, achievement_id)`.
+
+### `find_trade_matches()` RPC
+Trade-matches discovery — for the calling user, finds other users whose `inventory_items`
+intersect the caller's `want_items`, flagging `mutual: true` when the reverse also holds (their
+`want_items` intersects one of the caller's spare — `quantity > 1` — `inventory_items`). A single
+SQL function rather than 4 chained client queries + a JS join, for the same reason `0006` added the
+`cards_distinct_*()` functions. `security invoker`, granted to `authenticated` only (narrower than
+the cards facet functions' `anon`+`authenticated` — a match only makes sense for a signed-in user
+with a want-list). Returns `(other_user_id uuid, they_have_count integer, mutual boolean)`, backing
+the Home dashboard's "Trade matches" widget and a match badge on `/traders` rows
+(`lib/queries/matches.ts`).
+
 ## Row Level Security
 
 Every table has RLS enabled. Summary (full policies in `0002_rls_policies.sql`):
@@ -223,10 +286,13 @@ Every table has RLS enabled. Summary (full policies in `0002_rls_policies.sql`):
 | `trade_listings` | select: public; insert/update/delete: owner only |
 | `trade_listing_items` | select: public; insert/update/delete: only if the parent listing's `owner_id = auth.uid()` |
 | `trades` | select/update: `auth.uid() in (initiator_id, counterparty_id)`; insert: `auth.uid() = initiator_id`; **plus** select for admins |
-| `trade_items` | select: participants of parent trade; insert/delete: the participant whose `offered_by = auth.uid()`; **plus** select for admins |
+| `trade_items` | select: participants of parent trade; insert: only the trade's `initiator_id` (who sets both sides' items at proposal time — the counterparty only accepts/rejects, never edits items), and only for `offered_by in (initiator_id, counterparty_id)`; delete: the participant whose `offered_by = auth.uid()`; **plus** select for admins |
 | `messages` | select/insert: `auth.uid() in (initiator_id, counterparty_id)` of the parent trade — the core privacy gate for chat; deliberately **not** given an admin bypass, so trade chat stays private |
 | `fairness_rules` | select: public; write: service-role only |
 | `notifications` | select/update: `auth.uid() = user_id` (update is how a row gets marked read); **no insert/delete policy** — rows are only created by the `notify_trade_event()` trigger |
+| `activity_log` | select/insert: `auth.uid() = user_id` only |
+| `achievements` | select: public; writes: service-role only (seeded catalog) |
+| `user_achievements` | select/insert: `auth.uid() = user_id` only — insert checks *who* is unlocking, not whether the achievement was actually earned (client-trusted; see `evaluateAchievements()`'s doc comment for why that's an acceptable trade-off here) |
 
 The admin bypass policies (`0007_admin_role.sql`) are read-only and additive — they grant an
 extra `select` path alongside the existing owner/participant policies rather than replacing them,

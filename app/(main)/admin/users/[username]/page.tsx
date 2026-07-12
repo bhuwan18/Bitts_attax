@@ -8,14 +8,14 @@ import { AdminUserActivityPanel } from "@/components/admin/AdminUserActivityPane
 export default async function AdminUserDetailPage({
   params,
 }: {
-  params: Promise<{ userId: string }>;
+  params: Promise<{ username: string }>;
 }) {
-  const { userId } = await params;
+  const { username } = await params;
   const supabase = await createClient();
   const { data: profile } = await supabase
     .from("profiles")
     .select("*")
-    .eq("id", userId)
+    .eq("username", username)
     .single();
 
   if (!profile) notFound();
@@ -40,6 +40,8 @@ export default async function AdminUserDetailPage({
         <Badge variant={profile.role === "admin" ? "default" : "outline"}>{profile.role}</Badge>
       </div>
 
+      {/* Only the resolved profile id is used to query activity — the raw id
+          never appears in the URL or on screen, just the username. */}
       <AdminUserActivityPanel userId={profile.id} />
     </div>
   );

@@ -24,7 +24,7 @@ flowchart TB
 
     subgraph Supabase["Supabase Project"]
         Auth["Supabase Auth"]
-        DB[("Postgres\ncards, inventory, trades, messages, fairness_rules")]
+        DB[("Postgres\ncards, inventory, trades, messages, fairness_rules,\nactivity_log, achievements")]
         RLS["Row Level Security policies"]
         Realtime["Supabase Realtime\nPostgres Changes on messages"]
     end
@@ -53,7 +53,12 @@ flowchart TB
 
 ### Frontend / PWA (`app/`, `components/`, `lib/queries/`, `lib/realtime/`)
 - Next.js App Router with two route groups: `(auth)` (login/signup/magic-link, unauthenticated) and
-  `(main)` (cards/inventory/trades/profile, authenticated — enforced by `proxy.ts`).
+  `(main)` (home dashboard at `/`, cards/inventory/trades/profile, authenticated — enforced by
+  `proxy.ts`).
+- `(main)`'s layout is a persistent left `Sidebar` beside a scrolling `<main>` on desktop
+  (`flex md:flex-row`, `Sidebar` is `md:sticky` rather than `fixed` so `<main>` never needs manual
+  margin-syncing), collapsing to a stacked `MobileTopBar` → `<main>` → `MobileNav` bottom-tab shell
+  on mobile — see [UI_COMPONENT_MANIFEST.md](./UI_COMPONENT_MANIFEST.md#navigation-componentsnav).
 - TanStack Query owns client-side data fetching/caching; Supabase's browser client
   (`lib/supabase/client.ts`) is the fetch layer underneath it.
 - Serwist (`app/sw.ts`, wired via `next.config.ts`) precaches the app shell and applies
@@ -63,8 +68,9 @@ flowchart TB
 - Server Components (`lib/supabase/server.ts`) read data at request time using the visitor's own
   session, so RLS applies identically to server-rendered and client-fetched data.
 - Server Actions (`app/(main)/inventory/actions.ts`, `app/(main)/trades/actions.ts`,
-  `app/(main)/trades/[tradeId]/fairness-actions.ts`, `app/(main)/trades/[tradeId]/chat/actions.ts`)
-  are the only write path — see [API_SPECIFICATION.md](./API_SPECIFICATION.md).
+  `app/(main)/trades/[tradeId]/fairness-actions.ts`, `app/(main)/trades/[tradeId]/chat/actions.ts`,
+  `app/(main)/gamification/actions.ts`) are the only write path — see
+  [API_SPECIFICATION.md](./API_SPECIFICATION.md).
 - `proxy.ts` (Next 16's renamed `middleware.ts`) refreshes the Supabase session cookie on every
   request and redirects unauthenticated visitors away from protected routes.
 
@@ -102,8 +108,8 @@ flowchart TB
    `ProposeTradeForm`) calls the same `proposeTrade` Server Action, which inserts a `trades` row and
    the corresponding `trade_items` for both parties.
 3. The `trades` insert fires the `notify_trade_event()` trigger, creating a `trade_proposed`
-   notification for the counterparty — their `NotificationBell`/Inbox tab updates live via
-   `useNotificationsChannel`.
+   notification for the counterparty — their `NotificationBell` (and the Sidebar's own unread dot)
+   updates live via `useNotificationsChannel`.
 4. The trade detail page (`/trades/[tradeId]`) calls `computeAndPersistFairness`, which loads the
    trade's items, the active `fairness_rules` row, runs the pure `computeFairnessScore` function,
    and persists the result onto `trades.fairness_score` / `fairness_breakdown`.

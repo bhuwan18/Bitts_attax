@@ -13,7 +13,7 @@ export function AdminNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex gap-1 border-b border-border">
+    <nav className="flex gap-1">
       {ADMIN_NAV_ITEMS.map(({ href, label }) => {
         const active = href === "/admin" ? pathname === href : pathname.startsWith(href);
         return (
@@ -21,10 +21,10 @@ export function AdminNav() {
             key={href}
             href={href}
             className={cn(
-              "border-b-2 px-3 pb-2 text-sm font-semibold tracking-wide uppercase transition-colors",
+              "rounded-full px-3 py-1.5 text-sm font-semibold tracking-wide uppercase transition-colors",
               active
-                ? "border-primary text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground"
+                ? "bg-primary/15 text-primary"
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
             {label}

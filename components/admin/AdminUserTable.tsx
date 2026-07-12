@@ -35,7 +35,10 @@ export function AdminUserTable() {
         {users.map((user) => (
           <TableRow key={user.id}>
             <TableCell>
-              <Link href={`/admin/users/${user.id}`} className="font-medium hover:underline">
+              <Link
+                href={`/admin/users/${encodeURIComponent(user.username)}`}
+                className="font-medium hover:underline"
+              >
                 @{user.username}
               </Link>
             </TableCell>

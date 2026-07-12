@@ -32,7 +32,7 @@ export function LoginForm() {
       return;
     }
 
-    router.push(searchParams.get("redirectTo") ?? "/cards");
+    router.push(searchParams.get("redirectTo") ?? "/");
     router.refresh();
   }
 

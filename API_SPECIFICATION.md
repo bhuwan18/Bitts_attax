@@ -105,6 +105,47 @@ Validated against `SendMessageSchema` (body 1–2000 chars). Inserts a `messages
 Realtime broadcast that other participants' `useTradeChannel` subscription receives — see
 [SYSTEM_ARCHITECTURE.md](./SYSTEM_ARCHITECTURE.md).
 
+## Gamification (`app/(main)/gamification/actions.ts`)
+
+### `recordDailyActivity(localDate: string): Promise<string[]>`
+`localDate` must be `YYYY-MM-DD`, not in the future, not more than a year old — validated, but
+otherwise **trusted from the client** rather than computed server-side in UTC, so a session near
+midnight lands on the calendar day the user actually experienced (a deliberate, low-stakes
+trust-boundary choice; see [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md#activity_log)). Upserts an
+`activity_log` row (`onConflict: "user_id,activity_date", ignoreDuplicates: true` — a second call
+the same day is a no-op), then calls `evaluateAchievements()` and returns its result. Called once
+per session by `components/gamification/ActivityRecorder.tsx` (mounted in
+`app/(main)/layout.tsx`, same shape as `NotificationsListener`).
+
+### `evaluateAchievements(): Promise<string[]>`
+Re-derives identity via `getUser()` (never trusts a passed id). Computes, for the caller: completed-
+trade count (`trades` where `status = 'completed'` and the caller is either party), whether any
+owned card is `rare`/`super_rare`/`legend`/`limited`, and current streak (`activity_log` fed through
+`computeCurrentStreak`, `lib/gamification/streak.ts`). Diffs against the caller's existing
+`user_achievements`, inserts any newly-qualifying ones, revalidates `/profile`, and returns the
+newly-unlocked achievement ids (so the UI can toast "Unlocked: ‹name›").
+
+Called from four places: `recordDailyActivity` above, `updateTradeStatus` (`trades/actions.ts`)
+after a transition to `completed`, `addToInventory` (`inventory/actions.ts`) after success, and
+`components/profile/AchievementEvaluator.tsx` once per Profile page visit as a safety net. Note that
+a Server Action only ever evaluates the *calling* user's achievements — completing a trade only
+updates the achievements of whichever participant clicked Accept/Complete; the other participant's
+newly-completed-trade achievement is caught the next time they load their own Profile page.
+
+Level and XP are **not** a Server Action or a stored column — `lib/gamification/level.ts`'s
+`computeLevel`/`computeXpPercent` derive both from the caller's live unique-card count at render
+time (`components/profile/LevelProgress.tsx`), the same "compute from real data at query time"
+convention `useTraderHavesCounts()` already uses elsewhere in the app.
+
+## Trade matches (`lib/queries/matches.ts`, `find_trade_matches()` RPC)
+
+No Server Action — this is a read, backed by the `find_trade_matches()` Postgres function (see
+[DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md#find_trade_matches-rpc)). `useTradeMatches(limit?)` calls
+the RPC, then one follow-up `profiles` select to resolve display names for whatever it returned (two
+round trips total, not N+1). Surfaces on the Home dashboard (top 3, `components/home/TradeMatchesWidget.tsx`)
+and as a badge on `/traders` rows (`components/traders/TraderCard.tsx`'s optional `match` prop) —
+"Mutual match" when the intersection holds both ways, "Has what you want" otherwise.
+
 ## User discovery (`app/(main)/traders/`)
 
 No dedicated Server Actions — `/traders` and `/traders/[userId]` are pure reads (profiles are
@@ -145,7 +186,7 @@ Read-only — there are no admin Server Actions, only reads gated two ways:
 
 1. `app/(main)/admin/layout.tsx` calls `getCurrentProfile()` (`lib/auth/admin.ts`), which
    re-derives identity via `supabase.auth.getUser()` then loads that user's `profiles.role`;
-   anyone whose role isn't `'admin'` is redirected to `/cards`.
+   anyone whose role isn't `'admin'` is redirected to `/` (the Home dashboard).
 2. Independently, the admin-only `select` RLS policies added in
    `supabase/migrations/0007_admin_role.sql` (`inventory_items`, `want_items`, `trades`,
    `trade_items`) mean the underlying queries return data for admins and nothing extra for

@@ -9,9 +9,9 @@ export async function GET(request: NextRequest) {
 
   // Only allow same-origin relative paths through, so a crafted callback URL
   // can't turn this endpoint into an open redirect.
-  const requested = searchParams.get("redirectTo") ?? "/cards";
+  const requested = searchParams.get("redirectTo") ?? "/";
   const redirectTo =
-    requested.startsWith("/") && !requested.startsWith("//") ? requested : "/cards";
+    requested.startsWith("/") && !requested.startsWith("//") ? requested : "/";
 
   // Providers can bounce back with an error (e.g. the user cancelled consent).
   const oauthError = searchParams.get("error_description") ?? searchParams.get("error");

@@ -42,9 +42,14 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isProtected = PROTECTED_PREFIXES.some((prefix) =>
-    request.nextUrl.pathname.startsWith(prefix)
-  );
+  // Root `/` is now the Home dashboard (app/(main)/page.tsx), not a redirect
+  // stub — it needs its own exact-match check rather than joining
+  // PROTECTED_PREFIXES, since every pathname starts with "/" and adding the
+  // literal string "/" to that prefix list would wrongly protect /login,
+  // /signup, etc. too (and redirect-loop /login to itself).
+  const isProtected =
+    request.nextUrl.pathname === "/" ||
+    PROTECTED_PREFIXES.some((prefix) => request.nextUrl.pathname.startsWith(prefix));
 
   if (!user && isProtected) {
     const redirectUrl = new URL("/login", request.url);

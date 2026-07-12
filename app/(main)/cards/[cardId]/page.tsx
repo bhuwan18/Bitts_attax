@@ -3,7 +3,13 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { notFound } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { RARITY_LABEL, RARITY_STYLE, FOIL_RARITIES } from "@/lib/cards/rarity";
+import {
+  RARITY_LABEL,
+  RARITY_STYLE,
+  RARITY_BORDER_CLASS,
+  RARITY_GLOW_CLASS,
+  FOIL_RARITIES,
+} from "@/lib/cards/rarity";
 import { createClient } from "@/lib/supabase/server";
 import { AddToInventoryDialog } from "@/components/cards/AddToInventoryDialog";
 import { Badge } from "@/components/ui/badge";
@@ -49,19 +55,26 @@ export default async function CardDetailPage({
       <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
         <div
           className={cn(
-            "clip-corner relative aspect-[3/4] w-full max-w-xs shrink-0 bg-muted ring-1 ring-border sm:w-72",
+            "card-surface-gradient relative aspect-[3/4] w-full max-w-xs shrink-0 rounded-2xl border-4 sm:w-72",
+            RARITY_BORDER_CLASS[card.rarity] ?? RARITY_BORDER_CLASS.other,
+            RARITY_GLOW_CLASS[card.rarity] ?? RARITY_GLOW_CLASS.other,
             foil && "foil-sheen"
           )}
         >
           {heroImageUrl ? (
-            <Image src={heroImageUrl} alt={card.name} fill className="object-cover" />
+            <Image
+              src={heroImageUrl}
+              alt={card.name}
+              fill
+              className="rounded-[calc(var(--radius-2xl)-4px)] object-cover"
+            />
           ) : (
             <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
               No image
             </div>
           )}
           {card.ovr_rating != null && (
-            <div className="clip-corner-sm absolute top-0 left-0 bg-foreground/85 px-3 py-1.5 font-heading text-2xl leading-none font-extrabold text-background backdrop-blur-sm">
+            <div className="absolute top-0 left-0 rounded-lg bg-foreground/85 px-3 py-1.5 font-heading text-2xl leading-none font-extrabold text-background backdrop-blur-sm">
               {card.ovr_rating}
             </div>
           )}
@@ -76,7 +89,7 @@ export default async function CardDetailPage({
           <div>
             <span
               className={cn(
-                "clip-corner-sm mb-2 inline-block px-2.5 py-1 font-heading text-xs font-bold tracking-wide uppercase",
+                "mb-2 inline-block rounded-full px-2.5 py-1 font-heading text-xs font-bold tracking-wide uppercase",
                 RARITY_STYLE[card.rarity] ?? RARITY_STYLE.other
               )}
             >

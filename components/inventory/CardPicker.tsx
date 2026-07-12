@@ -38,7 +38,7 @@ export function CardPicker({
           )}
           {cards?.slice(0, 10).map((card) => (
             <div key={card.id} className="flex items-center gap-2.5 p-2">
-              <div className="clip-corner-sm relative size-10 shrink-0 overflow-hidden bg-muted">
+              <div className="relative size-10 shrink-0 overflow-hidden rounded-lg bg-muted">
                 {card.image_url && (
                   <Image src={card.image_url} alt={card.name} fill className="object-cover" />
                 )}

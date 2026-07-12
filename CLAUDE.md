@@ -60,8 +60,9 @@ normalize → batched-upsert pipeline (`scripts/ingest/`).
 
 `proxy.ts` (Next 16's renamed `middleware.ts`) refreshes the Supabase session cookie on every
 request and redirects unauthenticated visitors away from `(main)` routes. The `(auth)` route group
-(login/signup/magic-link) is unauthenticated; `(main)` (cards/inventory/trades/profile) is
-authenticated, enforced by `proxy.ts`.
+(login/signup/magic-link) is unauthenticated; `(main)` (home dashboard at `/`, cards/inventory/
+trades/profile) is authenticated, enforced by `proxy.ts`. Root `/` needs its own exact-match check
+in `proxy.ts` rather than joining the prefix list, since every pathname starts with `/`.
 
 Trade fairness is computed by the pure function `computeFairnessScore` (`lib/fairness.ts`) against a
 table-driven `fairness_rules` config (not hardcoded weights), so the heuristic is tunable without a
@@ -82,8 +83,10 @@ happen rather than being silently queued.
 ### Conventions worth knowing before editing
 
 - Every Server Action file groups by domain (`inventory/actions.ts`, `trades/actions.ts`,
-  `trades/[tradeId]/fairness-actions.ts`, `trades/[tradeId]/chat/actions.ts`), validates its input
-  against a Zod schema in `lib/validation/`, and calls `revalidatePath` on success.
+  `trades/[tradeId]/fairness-actions.ts`, `trades/[tradeId]/chat/actions.ts`,
+  `gamification/actions.ts`), validates its input against a Zod schema in `lib/validation/` (or an
+  inline Zod schema for a single primitive input, as `gamification/actions.ts` does), and calls
+  `revalidatePath` on success.
 - `cards`, `fairness_rules` writes are service-role-only at the RLS layer — there is intentionally
   no client-side write path for either; don't add Server Actions that write to them with a
   session-scoped client, they'll be rejected by RLS.

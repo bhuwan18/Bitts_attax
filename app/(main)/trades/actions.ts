@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { CreateListingSchema, ProposeTradeSchema } from "@/lib/validation/trade.schema";
+import { evaluateAchievements } from "@/app/(main)/gamification/actions";
 
 async function requireUser() {
   const supabase = await createClient();
@@ -106,4 +107,13 @@ export async function updateTradeStatus(tradeId: string, status: z.infer<typeof 
 
   if (error) throw new Error(error.message);
   revalidatePath(`/trades/${parsedTradeId}`);
+
+  // Only the calling participant's achievements can be evaluated here — a
+  // Server Action only has this session's identity, never the other party's
+  // (and never a service-role client, per this app's trust model). The other
+  // participant's newly-completed-trade achievement gets caught by
+  // AchievementEvaluator the next time they load their own Profile page.
+  if (parsedStatus === "completed") {
+    await evaluateAchievements();
+  }
 }

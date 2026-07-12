@@ -1,20 +1,21 @@
 import type { Metadata, Viewport } from "next";
-import { Big_Shoulders, Hanken_Grotesk } from "next/font/google";
+import { Space_Grotesk, Inter } from "next/font/google";
 import "./globals.css";
 import { QueryProvider } from "@/components/providers/QueryProvider";
 import { SupabaseProvider } from "@/components/providers/SupabaseProvider";
-import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 
-const headingFont = Big_Shoulders({
+const headingFont = Space_Grotesk({
   variable: "--font-heading",
   subsets: ["latin"],
+  weight: ["500", "600", "700"],
 });
 
-const bodyFont = Hanken_Grotesk({
+const bodyFont = Inter({
   variable: "--font-sans",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -30,10 +31,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f7f3ec" },
-    { media: "(prefers-color-scheme: dark)", color: "#211c14" },
-  ],
+  themeColor: "#101418",
 };
 
 export default function RootLayout({
@@ -42,27 +40,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      suppressHydrationWarning
-      className={`${headingFont.variable} ${bodyFont.variable} h-full antialiased`}
-    >
+    <html lang="en" className={`dark ${headingFont.variable} ${bodyFont.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <QueryProvider>
-            <SupabaseProvider>
-              <TooltipProvider>
-                <div className="flex min-h-full flex-1 flex-col">
-                  <div className="flex-1">{children}</div>
-                  <footer className="py-2 text-center text-xs text-muted-foreground">
-                    created by Bhavik G6 OIS
-                  </footer>
-                </div>
-              </TooltipProvider>
-              <Toaster />
-            </SupabaseProvider>
-          </QueryProvider>
-        </ThemeProvider>
+        <QueryProvider>
+          <SupabaseProvider>
+            <TooltipProvider>
+              <div className="flex min-h-full flex-1 flex-col">
+                <div className="flex-1">{children}</div>
+                <footer className="py-2 text-center text-xs text-muted-foreground">
+                  created by Bhavik G6 OIS
+                </footer>
+              </div>
+            </TooltipProvider>
+            <Toaster />
+          </SupabaseProvider>
+        </QueryProvider>
       </body>
     </html>
   );

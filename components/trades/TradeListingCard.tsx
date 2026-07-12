@@ -80,7 +80,7 @@ function ItemGroup({
           <span
             key={i.card.id}
             className={cn(
-              "clip-corner-sm px-2 py-0.5 text-xs font-medium",
+              "rounded-full px-2 py-0.5 text-xs font-medium",
               tone === "success" ? "bg-success/15 text-success" : "bg-primary/15 text-primary"
             )}
           >

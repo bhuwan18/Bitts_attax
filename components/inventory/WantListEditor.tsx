@@ -51,7 +51,7 @@ export function WantListEditor() {
               key={item.id}
               className="flex items-center gap-3 rounded-xl bg-card p-2 ring-1 ring-border"
             >
-              <div className="clip-corner-sm relative size-14 shrink-0 overflow-hidden bg-muted">
+              <div className="relative size-14 shrink-0 overflow-hidden rounded-lg bg-muted">
                 {item.card.image_url && (
                   <Image
                     src={item.card.image_url}

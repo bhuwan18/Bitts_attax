@@ -107,7 +107,7 @@ export function AddToInventoryDialog({
         </DialogHeader>
 
         <div className="flex flex-col gap-3">
-          <div className="clip-corner-sm relative mx-auto aspect-[3/4] w-40 overflow-hidden bg-muted ring-1 ring-border">
+          <div className="relative mx-auto aspect-[3/4] w-40 overflow-hidden rounded-lg bg-muted ring-1 ring-border">
             {displayImageUrl ? (
               <Image src={displayImageUrl} alt={card.name} fill className="object-cover" />
             ) : (

@@ -4,6 +4,20 @@
 than Radix — see the `style: "base-nova"` in `components.json`) is omitted below; it's
 infrastructure, not application UI. Everything else is hand-written for this app.
 
+## Home (`components/home/`)
+
+| Component | Purpose |
+|---|---|
+| `HomeDashboard.tsx` | Client composition root for the Home dashboard: stat row + `StreakBanner` + `TradeMatchesWidget` + `RecentCardsRail` |
+| `StreakBanner.tsx` | Current login-streak banner (`useCurrentStreak()`), renders nothing if the streak is 0 |
+| `RecentCardsRail.tsx` | Horizontal `ScrollArea` of the newest catalog cards (`useRecentCards()`), reuses `CardTile` |
+| `TradeMatchesWidget.tsx` | Top-3 trade matches (`useTradeMatches(3)`), each linking to `/traders/[userId]` |
+
+Used by: `app/(main)/page.tsx` — the authenticated landing route (`/`), a Server Component that
+fetches the display name for the welcome header and mounts `HomeDashboard`. `proxy.ts` gives root
+`/` its own exact-match protection check rather than joining the prefix-based list, since every
+pathname starts with `/`.
+
 ## Cards (`components/cards/`)
 
 | Component | Purpose |
@@ -11,7 +25,7 @@ infrastructure, not application UI. Everything else is hand-written for this app
 | `CardSearch.tsx` | Owns debounced search/filter state, renders `CardFilters` + `CardGrid` via `useCardsInfinite()`, plus a "Load more" button |
 | `CardFilters.tsx` | Rarity and Position as pill toggles (rarity pills colored via `RARITY_STYLE`), Team and Set as `<Select>`s, all rendered inline next to the search box, plus a "Clear filters" button when any are active; Team and Set options come from the `cards_distinct_teams`/`cards_distinct_set_names` RPCs |
 | `CardGrid.tsx` | Responsive grid (2/3/4/5 columns by breakpoint) with loading skeletons (`CardGridSkeleton`) and empty state |
-| `CardTile.tsx` | Single card preview: image, OVR badge, name, team, rarity badge, price |
+| `CardTile.tsx` | Single card preview: gradient image frame with a rarity-colored border + glow (`RARITY_BORDER_CLASS`/`RARITY_GLOW_CLASS`, `lib/cards/rarity.ts`), OVR badge, name, team, rarity chip, price |
 | `AddToInventoryDialog.tsx` | Confirmation dialog for adding the current card to the user's Haves; lets the user attach their own photo (file picker or device camera via `capture="environment"`) instead of the stock `cards.image_url` before confirming, via `useAddToInventory()`. Relabels to "Edit in Inventory" and pre-fills quantity/photo when the card is already owned. |
 
 Used by: `app/(main)/cards/page.tsx` (browse — server-rendered, prefetches the first page and
@@ -25,7 +39,7 @@ render `AddToInventoryDialog` and tag a user-uploaded hero image with a "Your ph
 |---|---|
 | `CardPicker.tsx` | Shared search-and-add widget (used by both Haves and Wants tabs) |
 | `InventoryItemRow.tsx` | One owned card (list view): image, name, team, quantity input, remove button; shows a "Your photo" badge when `custom_image_url` is set |
-| `InventoryItemTile.tsx` | One owned card (grid view), same data as `InventoryItemRow.tsx` in a tile layout |
+| `InventoryItemTile.tsx` | One owned card (grid view), same data as `InventoryItemRow.tsx` in a tile layout, now with the same rarity border+glow treatment as `CardTile.tsx` |
 | `InventoryList.tsx` | Haves tab: `CardPicker` + list/grid of items (`InventoryViewToggle`), wired to `lib/queries/inventory.ts` mutations |
 | `WantListEditor.tsx` | Wants tab: `CardPicker` + want-list rows with remove button |
 
@@ -49,8 +63,8 @@ accept/decline actions).
 
 | Component | Purpose |
 |---|---|
-| `TraderBrowseList.tsx` | Search box + list of every other user (`useTraders(search)`), each showing a Haves count (`useTraderHavesCounts()`, one query for the whole list) |
-| `TraderCard.tsx` | One trader row: avatar, display name/`@username`, Haves count, links to `/traders/[userId]` |
+| `TraderBrowseList.tsx` | Search box + list of every other user (`useTraders(search)`), each showing a Haves count (`useTraderHavesCounts()`) and a trade-match badge (`useTradeMatches(100)`, both one query for the whole list, not per-row) |
+| `TraderCard.tsx` | One trader row: avatar, display name/`@username`, optional match badge ("Mutual match"/"Has what you want"), Haves count, links to `/traders/[userId]` |
 | `TraderInventoryGrid.tsx` | Read-only grid of another user's Haves (image, name, team, quantity) — presentational, no owner controls (unlike `InventoryItemTile.tsx`) |
 | `TraderWantList.tsx` | Read-only badge list of another user's Wants — lets a viewer see what to offer them, not just what to request from their Haves |
 | `ProposeTradeForm.tsx` | Two-sided picker built from each party's *actual* inventory (the caller's own `useInventory()` for "Your offer", the target's `useTraderInventory(userId)` for "Their items") rather than a global card search like `HaveWantPicker.tsx`; submits via `proposeTrade` and routes to the new trade |
@@ -59,18 +73,31 @@ Used by: `app/(main)/traders/page.tsx` (browse), `app/(main)/traders/[userId]/pa
 public profile — server-rendered profile header + Haves grid, redirects to `/profile` if the id is
 the caller's own).
 
+## Profile & Gamification (`components/profile/`, `components/gamification/`)
+
+| Component | Purpose |
+|---|---|
+| `profile/ProfileDashboard.tsx` | Client composition root mounted below the Profile page's server-rendered header: `LevelProgress` + a `StatStrip` (total/unique cards, trades done) + `AchievementBadgeGrid` + `AchievementEvaluator` |
+| `profile/LevelProgress.tsx` | Level number + XP fill bar, derived from unique-card count via `lib/gamification/level.ts` (not stored) |
+| `profile/AchievementBadgeGrid.tsx` | 2/4-column badge grid (`useAchievements()` catalog × `useUnlockedAchievements()`), dimmed at 35% opacity when locked; icon per achievement id is a hardcoded lookup, not stored data |
+| `profile/AchievementEvaluator.tsx` | Renders nothing — fires `evaluateAchievements()` once per Profile visit as a safety net, toasts newly-unlocked achievements |
+| `gamification/ActivityRecorder.tsx` | Renders nothing — fires `recordDailyActivity()` once per session with the browser's local calendar date, backing the login-streak feature |
+
+Used by: `app/(main)/profile/page.tsx` (own profile — server-rendered avatar/name/username/email +
+`ProfileDashboard`), `app/(main)/layout.tsx` (mounts `ActivityRecorder` alongside
+`NotificationsListener`). See [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) for the
+`activity_log`/`achievements`/`user_achievements` tables and
+[API_SPECIFICATION.md](./API_SPECIFICATION.md) for the Server Actions backing all of this.
+
 ## Notifications (`components/notifications/`)
 
 | Component | Purpose |
 |---|---|
-| `NotificationBell.tsx` | Unread-count badge (`useUnreadNotificationsCount()`) + live updates (`useNotificationsChannel()`), links to `/notifications` — shown in `DesktopHeader.tsx` |
+| `NotificationBell.tsx` | Unread-count badge (`useUnreadNotificationsCount()`) + live updates (`useNotificationsChannel()`), links to `/notifications` — its only mount point is `MobileTopBar.tsx`, but `Sidebar.tsx` renders its own unread dot next to the Notifications nav item using the same hooks |
 | `NotificationList.tsx` | `useNotifications()` + "Mark all read" (`useMarkAllNotificationsRead()`), renders `NotificationRow`s, empty state |
 | `NotificationRow.tsx` | Per-type message text, relative timestamp, unread styling; click marks read (`markNotificationRead`) and navigates to the related `/trades/[tradeId]` |
 
-Used by: `app/(main)/notifications/page.tsx` (the inbox). `MobileNav.tsx` renders its own
-unread-dot indicator on the Inbox tab (same `useUnreadNotificationsCount()`/
-`useNotificationsChannel()` hooks) rather than embedding `NotificationBell.tsx` directly, since the
-bell's layout is desktop-specific.
+Used by: `app/(main)/notifications/page.tsx` (the inbox).
 
 ## Chat (`components/chat/`)
 
@@ -87,27 +114,30 @@ Used by: `app/(main)/trades/[tradeId]/chat/page.tsx`.
 | Component | Purpose |
 |---|---|
 | `AdminNav.tsx` | Dashboard/Users tab row shown at the top of every `/admin` page |
-| `AdminUserTable.tsx` | Full user list (`useAdminUsers()`), links each row to `/admin/users/[userId]` |
+| `AdminUserTable.tsx` | Full user list (`useAdminUsers()`), links each row to `/admin/users/[username]` |
 | `AdminUserActivityPanel.tsx` | One user's trades, inventory, and want-list (`useAdminUserActivity()`) |
 | `AdminTradesTable.tsx` | Shared trades table (initiator/counterparty/status/fairness/created), used by both the dashboard and the user detail page |
 | `AdminRecentTradesTable.tsx` | Dashboard's "recent trades" feed (`useAdminRecentTrades()`), wraps `AdminTradesTable` |
 | `TradeStatusBadge.tsx` | Status-colored `Badge` for a trade, shared by `AdminTradesTable` |
 
 Used by: `app/(main)/admin/page.tsx` (dashboard), `app/(main)/admin/users/page.tsx` (user list),
-`app/(main)/admin/users/[userId]/page.tsx` (user detail). Gated by `app/(main)/admin/layout.tsx`,
-which redirects non-admins to `/cards` — see [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) for the
+`app/(main)/admin/users/[username]/page.tsx` (user detail). Gated by `app/(main)/admin/layout.tsx`,
+which redirects non-admins to `/` — see [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) for the
 `profiles.role` column and admin-only RLS policies backing this section.
 
 ## Navigation (`components/nav/`)
 
 | Component | Purpose |
 |---|---|
-| `MobileNav.tsx` | Fixed bottom tab bar (Cards / Inventory / Trades / Traders / Inbox / Profile, plus Admin for admins) — mobile only (`md:hidden`); the Inbox tab shows its own unread dot |
-| `DesktopHeader.tsx` | Sticky top nav with the same links, plus `NotificationBell.tsx` next to `ThemeToggle` — desktop only (`hidden md:block`) |
+| `Sidebar.tsx` | Persistent 216px left sidebar — desktop only (`hidden md:flex`, `md:sticky md:top-0 md:h-screen`, not `fixed`, so `<main>` never needs manual margin-syncing). Home / Cards / Inventory / Trades / Traders / Notifications / Profile & Stats, plus Admin for admins; unread-notifications dot next to the Notifications item; user avatar + name pinned at the bottom via `mt-auto`, linking to `/profile` |
+| `MobileTopBar.tsx` | Sticky top bar — mobile only (`md:hidden`). Logo/wordmark (links to `/`) + `NotificationBell.tsx`; this is the bell's only mount point |
+| `MobileNav.tsx` | Fixed bottom tab bar — mobile only (`md:hidden`). Cards / Inventory / Trades / Traders / Profile, plus Admin for admins. Home and Notifications deliberately live in `MobileTopBar` instead, not the bottom bar — 7–8 bottom tabs would be too cramped for comfortable thumb targets |
 | `LogoutButton.tsx` | Signs out via Supabase and redirects to `/login` |
 
-Used by: `app/(main)/layout.tsx` wraps every authenticated route with both `DesktopHeader` and
-`MobileNav`; only one renders at a given viewport width (mobile-first responsive shell).
+Used by: `app/(main)/layout.tsx`, which lays out `Sidebar` + `<main>` side-by-side on desktop
+(`flex md:flex-row`) and stacks `MobileTopBar` → `<main>` → `MobileNav` vertically on mobile — only
+the nav pieces relevant to the current viewport width actually render any visible chrome, via
+Tailwind breakpoints rather than separate layouts.
 
 ## Providers (`components/providers/`)
 
@@ -123,13 +153,16 @@ Both wrap the entire app in `app/layout.tsx`, alongside Shadcn's `TooltipProvide
 
 Not components, but the client-side data layer every component above depends on:
 
-- `lib/queries/cards.ts` — `useCards(filters)` (used by `HaveWantPicker`/`CardPicker`), `useCard(id)`, `useCardsInfinite(filters)` (used by `CardSearch`, paginated via `lib/queries/cardsShared.ts`)
+- `lib/queries/cards.ts` — `useCards(filters)` (used by `HaveWantPicker`/`CardPicker`), `useCard(id)`, `useCardsInfinite(filters)` (used by `CardSearch`, paginated via `lib/queries/cardsShared.ts`), `useRecentCards(limit?)` (used by `RecentCardsRail`)
 - `lib/queries/inventory.ts` — `useInventory()`, `useWantList()`, plus mutation hooks wrapping each Server Action
-- `lib/queries/trades.ts` — `useTradeListings()`, `useTrade(tradeId)`
+- `lib/queries/trades.ts` — `useTradeListings()`, `useTrade(tradeId)`, `useMyCompletedTradesCount()` (used by `ProfileDashboard`'s stat row and `evaluateAchievements`' `trader_x3` check)
+- `lib/queries/matches.ts` — `useTradeMatches(limit?)`, wraps the `find_trade_matches()` RPC + a follow-up `profiles` lookup
+- `lib/queries/gamification.ts` — `useCurrentStreak()`, `useAchievements()` (public catalog), `useUnlockedAchievements()`
 - `lib/queries/messages.ts` — `useMessages(tradeId)`, `useSendMessage(tradeId)`
 - `lib/queries/traders.ts` — `useTraders(search?)`, `useTraderHavesCounts()`, `useTraderProfile(userId)`, `useTraderInventory(userId)`, `useTraderWantList(userId)` — reliant on the public `select` policies on `inventory_items`/`want_items` added in `0009_user_discovery_and_notifications.sql`/`0010_want_items_public_read.sql`
 - `lib/queries/notifications.ts` — `useNotifications()`, `useUnreadNotificationsCount()`, `useMarkNotificationRead()`, `useMarkAllNotificationsRead()`
 - `lib/queries/auth.ts` — `useCurrentUser()`, `useCurrentProfile()` (own `profiles` row, incl. `role` — used to conditionally show the Admin nav link)
 - `lib/queries/admin.ts` — `useAdminUsers()`, `useAdminRecentTrades()`, `useAdminUserActivity(userId)`, all reliant on the admin-only RLS `select` policies in `supabase/migrations/0007_admin_role.sql`
+- `lib/gamification/streak.ts`, `lib/gamification/level.ts` — pure functions (not query hooks) behind `useCurrentStreak()` and `LevelProgress.tsx` respectively; same "pure function + thin query wrapper" shape as `lib/fairness.ts`
 - `lib/realtime/useTradeChannel.ts` — subscribes to the trade's chat channel and pushes inserts into the `["messages", tradeId]` query cache
 - `lib/realtime/useNotificationsChannel.ts` — subscribes to a channel-per-user (`notifications` filtered by `user_id`) and invalidates the `["notifications"]` queries on insert

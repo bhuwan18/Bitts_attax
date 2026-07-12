@@ -35,7 +35,7 @@ export function FairnessMeter({ result }: { result: FairnessResult }) {
           <span className="text-sm font-semibold">Fairness score</span>
           <span
             className={cn(
-              "clip-corner-sm px-2 py-0.5 font-heading text-[10px] font-bold tracking-wide uppercase",
+              "rounded-full px-2 py-0.5 font-heading text-[10px] font-bold tracking-wide uppercase",
               style.chip
             )}
           >

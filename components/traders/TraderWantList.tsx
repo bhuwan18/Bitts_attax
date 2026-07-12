@@ -10,7 +10,7 @@ export function TraderWantList({ items }: { items: TraderWantItem[] }) {
       {items.map((item) => (
         <span
           key={item.id}
-          className="clip-corner-sm bg-primary/15 px-2 py-1 text-xs font-medium text-primary"
+          className="rounded-full bg-primary/15 px-2 py-1 text-xs font-medium text-primary"
         >
           {item.card.name}
         </span>

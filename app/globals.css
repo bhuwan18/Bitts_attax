@@ -43,6 +43,13 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-rarity-common: var(--rarity-common);
+  --color-rarity-uncommon: var(--rarity-uncommon);
+  --color-rarity-rare: var(--rarity-rare);
+  --color-rarity-super-rare: var(--rarity-super-rare);
+  --color-rarity-legend: var(--rarity-legend);
+  --color-rarity-limited: var(--rarity-limited);
+  --color-brand: var(--brand);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -53,92 +60,65 @@
 }
 
 :root {
-  /* Card sits as crisp near-white "paper" on a visibly deeper warm-gray
-     canvas. The fill delta alone is a soft depth cue — the border is what
-     actually has to read as a boundary, so it's tuned to clear ~3:1 WCAG
-     non-text contrast against both card and background, not just "a bit
-     darker than before." */
-  --background: oklch(0.91 0.008 75);
-  --foreground: oklch(0.19 0.017 60);
-  --card: oklch(0.99 0.004 75);
-  --card-foreground: oklch(0.19 0.017 60);
-  --popover: oklch(0.99 0.004 75);
-  --popover-foreground: oklch(0.19 0.017 60);
-  /* Marigold — the trophy-gold brand accent, deep enough for white text */
-  --primary: oklch(0.55 0.16 61);
-  --primary-foreground: oklch(0.99 0.01 90);
-  --secondary: oklch(0.85 0.013 70);
-  --secondary-foreground: oklch(0.24 0.017 60);
-  --muted: oklch(0.8 0.014 70);
-  --muted-foreground: oklch(0.4 0.016 60);
-  --accent: oklch(0.84 0.014 70);
-  --accent-foreground: oklch(0.24 0.017 60);
-  /* Pitch green — success / "very fair" trades */
-  --success: oklch(0.52 0.13 150);
-  --success-foreground: oklch(0.98 0.015 150);
-  /* Caution yellow — "slightly uneven" */
-  --warning: oklch(0.78 0.14 95);
-  --warning-foreground: oklch(0.22 0.02 95);
-  --destructive: oklch(0.58 0.2 27);
-  --destructive-foreground: oklch(0.98 0.012 30);
-  --border: oklch(0.58 0.02 65);
-  --input: oklch(0.58 0.02 65);
-  --ring: oklch(0.55 0.16 61 / 45%);
-  --chart-1: oklch(0.55 0.16 61);
-  --chart-2: oklch(0.52 0.13 150);
-  --chart-3: oklch(0.6 0.14 30);
-  --chart-4: oklch(0.5 0.03 70);
-  --chart-5: oklch(0.35 0.02 70);
-  --radius: 0.5rem;
-  --sidebar: oklch(0.89 0.009 75);
-  --sidebar-foreground: oklch(0.19 0.017 60);
-  --sidebar-primary: oklch(0.55 0.16 61);
-  --sidebar-primary-foreground: oklch(0.99 0.01 90);
-  --sidebar-accent: oklch(0.8 0.014 70);
-  --sidebar-accent-foreground: oklch(0.24 0.017 60);
-  --sidebar-border: oklch(0.58 0.02 65);
-  --sidebar-ring: oklch(0.55 0.16 61 / 45%);
-}
-
-.dark {
-  /* Floodlit-stadium charcoal, not pure black */
-  --background: oklch(0.195 0.017 65);
-  --foreground: oklch(0.96 0.008 70);
-  --card: oklch(0.27 0.021 65);
-  --card-foreground: oklch(0.96 0.008 70);
-  --popover: oklch(0.27 0.021 65);
-  --popover-foreground: oklch(0.96 0.008 70);
-  /* Brighter gold plate on dark — pairs with dark ink text */
-  --primary: oklch(0.76 0.15 68);
-  --primary-foreground: oklch(0.19 0.02 65);
-  --secondary: oklch(0.325 0.021 65);
-  --secondary-foreground: oklch(0.95 0.008 70);
-  --muted: oklch(0.3 0.02 65);
-  --muted-foreground: oklch(0.7 0.015 70);
-  --accent: oklch(0.35 0.022 65);
-  --accent-foreground: oklch(0.96 0.008 70);
-  --success: oklch(0.68 0.15 150);
-  --success-foreground: oklch(0.16 0.02 150);
-  --warning: oklch(0.8 0.14 95);
-  --warning-foreground: oklch(0.19 0.02 95);
-  --destructive: oklch(0.68 0.19 26);
-  --destructive-foreground: oklch(0.97 0.012 30);
+  /* Dark-only "Bitts Attax" palette — near-black stadium-at-night canvas,
+     neon cyan/yellow/pink/orange accents. There is no light theme; see
+     app/layout.tsx for why the `dark` class stays on <html> regardless
+     (several shadcn primitives key off `dark:*` utilities directly). */
+  --background: oklch(0.189 0.01 248.4);
+  --foreground: oklch(0.966 0.017 293.1);
+  --card: oklch(0.227 0.017 248.6);
+  --card-foreground: oklch(0.966 0.017 293.1);
+  --popover: oklch(0.227 0.017 248.6);
+  --popover-foreground: oklch(0.966 0.017 293.1);
+  /* Neon cyan — the interactive brand accent */
+  --primary: oklch(0.852 0.135 210);
+  --primary-foreground: oklch(0.189 0.01 248.4);
+  --secondary: oklch(0.249 0.018 252);
+  --secondary-foreground: oklch(0.966 0.017 293.1);
+  --muted: oklch(0.249 0.018 252);
+  --muted-foreground: oklch(0.966 0.017 293.1 / 55%);
+  --accent: oklch(0.28 0.021 248.6);
+  --accent-foreground: oklch(0.966 0.017 293.1);
+  /* Mint green — success / "very fair" trades (invented; the mockup has no fairness UI) */
+  --success: oklch(0.817 0.201 150.5);
+  --success-foreground: oklch(0.145 0.03 150);
+  /* Neon yellow — "slightly uneven" fairness, shared with the Super Rare rarity tier */
+  --warning: oklch(0.911 0.172 98.6);
+  --warning-foreground: oklch(0.19 0.03 98);
+  /* Vivid red — deliberately not orange, so "Decline trade" never reads as a Limited-rarity chip */
+  --destructive: oklch(0.669 0.219 20.9);
+  --destructive-foreground: oklch(0.98 0.01 20);
   --border: oklch(1 0 0 / 20%);
   --input: oklch(1 0 0 / 24%);
-  --ring: oklch(0.76 0.15 68 / 45%);
-  --chart-1: oklch(0.76 0.15 68);
-  --chart-2: oklch(0.68 0.15 150);
-  --chart-3: oklch(0.7 0.16 30);
-  --chart-4: oklch(0.65 0.03 70);
-  --chart-5: oklch(0.85 0.02 70);
-  --sidebar: oklch(0.23 0.018 65);
-  --sidebar-foreground: oklch(0.96 0.008 70);
-  --sidebar-primary: oklch(0.76 0.15 68);
-  --sidebar-primary-foreground: oklch(0.19 0.02 65);
-  --sidebar-accent: oklch(0.325 0.021 65);
-  --sidebar-accent-foreground: oklch(0.96 0.008 70);
+  --ring: oklch(0.852 0.135 210 / 45%);
+  --chart-1: oklch(0.852 0.135 210);
+  --chart-2: oklch(0.817 0.201 150.5);
+  --chart-3: oklch(0.678 0.237 356.9);
+  --chart-4: oklch(0.705 0.193 39.2);
+  --chart-5: oklch(0.648 0.048 219.9);
+  /* Base radius solved so the existing sm..4xl scale lands ~8px..~36px —
+     the mockup's stated corner-radius range — rather than a one-off value. */
+  --radius: 0.85rem;
+  --sidebar: oklch(0.227 0.017 248.6);
+  --sidebar-foreground: oklch(0.966 0.017 293.1);
+  --sidebar-primary: oklch(0.852 0.135 210);
+  --sidebar-primary-foreground: oklch(0.189 0.01 248.4);
+  --sidebar-accent: oklch(0.249 0.018 252);
+  --sidebar-accent-foreground: oklch(0.966 0.017 293.1);
   --sidebar-border: oklch(1 0 0 / 20%);
-  --sidebar-ring: oklch(0.76 0.15 68 / 45%);
+  --sidebar-ring: oklch(0.852 0.135 210 / 45%);
+  /* Rarity ladder — cards.rarity has 7 real values, not the mockup's 5
+     fictional tiers. Ordering matches fairness_rules.rarity_weights
+     (0003_fairness_config_seed.sql), where limited > legend in rarity. */
+  --rarity-common: oklch(0.642 0.037 285.3);
+  --rarity-uncommon: oklch(0.648 0.048 219.9);
+  --rarity-rare: oklch(0.852 0.135 210);
+  --rarity-super-rare: oklch(0.911 0.172 98.6);
+  --rarity-legend: oklch(0.678 0.237 356.9);
+  --rarity-limited: oklch(0.705 0.193 39.2);
+  /* Same value as rarity-legend today, but a distinct token so a future
+     rarity-palette tweak can't accidentally recolor the logo. */
+  --brand: oklch(0.678 0.237 356.9);
 }
 
 @layer base {
@@ -153,14 +133,30 @@
   }
 }
 
-/* Signature corner-cut, used sparingly on the card tile and hero panels —
-   a nod to a physical card's clipped foil corner rather than a soft rounded box. */
-@utility clip-corner {
-  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%);
+/* Rarity glow — escalating radius/opacity by tier so higher rarity reads as
+   "more glow." Reuses foil-sheen's color-mix(in oklch, ...) technique. */
+@utility rarity-glow-common {
+  box-shadow: 0 0 20px color-mix(in oklch, var(--rarity-common) 30%, transparent);
+}
+@utility rarity-glow-uncommon {
+  box-shadow: 0 0 20px color-mix(in oklch, var(--rarity-uncommon) 32%, transparent);
+}
+@utility rarity-glow-rare {
+  box-shadow: 0 0 24px color-mix(in oklch, var(--rarity-rare) 38%, transparent);
+}
+@utility rarity-glow-super-rare {
+  box-shadow: 0 0 24px color-mix(in oklch, var(--rarity-super-rare) 38%, transparent);
+}
+@utility rarity-glow-legend {
+  box-shadow: 0 0 28px color-mix(in oklch, var(--rarity-legend) 42%, transparent);
+}
+@utility rarity-glow-limited {
+  box-shadow: 0 0 30px color-mix(in oklch, var(--rarity-limited) 45%, transparent);
 }
 
-@utility clip-corner-sm {
-  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+/* Trading-card surface — a subtle diagonal gradient instead of a flat card fill. */
+@utility card-surface-gradient {
+  background: linear-gradient(160deg, oklch(0.28 0.021 248.6), oklch(0.227 0.017 248.6));
 }
 
 /* Foil sweep for legend/limited rarity — a hover-triggered diagonal sheen,

@@ -10,6 +10,23 @@ import {
 } from "@/components/ui/table";
 import type { AdminTradeSummary } from "@/lib/queries/admin";
 
+type TradeParty = AdminTradeSummary["initiator"];
+
+// Never link out using the raw profile id — the admin section only ever
+// surfaces usernames, including in URLs.
+function UserLink({ profile }: { profile: TradeParty }) {
+  if (!profile) return <span className="text-muted-foreground">—</span>;
+
+  return (
+    <Link
+      href={`/admin/users/${encodeURIComponent(profile.username)}`}
+      className="hover:underline"
+    >
+      {profile.display_name ?? profile.username}
+    </Link>
+  );
+}
+
 export function AdminTradesTable({
   trades,
   emptyMessage = "No trades yet.",
@@ -36,14 +53,10 @@ export function AdminTradesTable({
         {trades.map((trade) => (
           <TableRow key={trade.id}>
             <TableCell>
-              <Link href={`/admin/users/${trade.initiator_id}`} className="hover:underline">
-                {trade.initiator?.display_name ?? trade.initiator?.username ?? "—"}
-              </Link>
+              <UserLink profile={trade.initiator} />
             </TableCell>
             <TableCell>
-              <Link href={`/admin/users/${trade.counterparty_id}`} className="hover:underline">
-                {trade.counterparty?.display_name ?? trade.counterparty?.username ?? "—"}
-              </Link>
+              <UserLink profile={trade.counterparty} />
             </TableCell>
             <TableCell>
               <TradeStatusBadge status={trade.status} />

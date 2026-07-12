@@ -4,12 +4,17 @@ import { useState } from "react";
 import { Search, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useTraderHavesCounts, useTraders } from "@/lib/queries/traders";
+import { useTradeMatches } from "@/lib/queries/matches";
 import { TraderCard } from "@/components/traders/TraderCard";
 
 export function TraderBrowseList() {
   const [search, setSearch] = useState("");
   const { data: traders, isLoading } = useTraders(search || undefined);
   const { data: havesCounts } = useTraderHavesCounts();
+  // One query feeding a per-row lookup, not N queries — same shape as
+  // useTraderHavesCounts() above.
+  const { data: matches } = useTradeMatches(100);
+  const matchByUserId = new Map((matches ?? []).map((m) => [m.userId, m]));
 
   return (
     <div className="flex flex-col gap-4">
@@ -34,7 +39,12 @@ export function TraderBrowseList() {
 
       <div className="flex flex-col gap-2">
         {traders?.map((trader) => (
-          <TraderCard key={trader.id} trader={trader} havesCount={havesCounts?.[trader.id] ?? 0} />
+          <TraderCard
+            key={trader.id}
+            trader={trader}
+            havesCount={havesCounts?.[trader.id] ?? 0}
+            match={matchByUserId.get(trader.id)}
+          />
         ))}
       </div>
     </div>

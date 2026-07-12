@@ -1,5 +1,7 @@
-export const ICON_BG = "#211c14";
-export const ICON_GOLD = "#dba53c";
+export const ICON_BG = "#101418";
+// Kept the name for now, even though it's the brand pink, not gold — every
+// call site imports it as ICON_GOLD and this is purely a fill color.
+export const ICON_GOLD = "#FF3E9A";
 
 /**
  * The two-card brand mark, rendered with plain positioned divs so it can run

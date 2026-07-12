@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import type { TablesInsert } from "@/lib/types/database.types";
+import { evaluateAchievements } from "@/app/(main)/gamification/actions";
 
 const UuidSchema = z.uuid();
 const QuantitySchema = z.number().int().min(1).max(999);
@@ -69,6 +70,7 @@ export async function addToInventory(cardId: string, quantity = 1, image?: File 
   if (error) throw new Error(error.message);
   revalidatePath("/inventory");
   revalidatePath(`/cards/${parsedCardId}`);
+  await evaluateAchievements();
 }
 
 export async function updateInventoryQuantity(itemId: string, quantity: number) {

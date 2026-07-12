@@ -50,7 +50,7 @@ doesn't affect the production bundle, only our `npm run typecheck` script.
 Next's typed `MetadataRoute.Manifest` export (served at `/manifest.webmanifest`):
 - `name`/`short_name`: "Bitts Attax"
 - `display: "standalone"`, `orientation: "portrait"`
-- `theme_color` / `background_color`: `#0a0a0a`
+- `theme_color` / `background_color`: `#101418`
 - Icons: `public/icons/icon.svg` (scalable, `purpose: "any"`) plus generated 192px/512px/maskable-512px
   PNGs. **These PNGs are programmatically generated placeholders** (a simple card-shaped mark on a
   dark background) — swap them for real branded artwork before shipping to production.

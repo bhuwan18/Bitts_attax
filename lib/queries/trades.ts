@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
+import { useCurrentUser } from "@/lib/queries/auth";
 import type { Card, Profile, Trade, TradeListing } from "@/lib/types/database.types";
 
 export interface TradeListingWithDetails extends TradeListing {
@@ -26,6 +27,25 @@ export function useTradeListings() {
       if (error) throw error;
       return (data ?? []) as unknown as TradeListingWithDetails[];
     },
+  });
+}
+
+export function useMyCompletedTradesCount() {
+  const supabase = useSupabase();
+  const { data: user } = useCurrentUser();
+
+  return useQuery({
+    queryKey: ["myCompletedTradesCount", user?.id],
+    queryFn: async (): Promise<number> => {
+      const { count, error } = await supabase
+        .from("trades")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "completed")
+        .or(`initiator_id.eq.${user!.id},counterparty_id.eq.${user!.id}`);
+      if (error) throw error;
+      return count ?? 0;
+    },
+    enabled: !!user,
   });
 }
 

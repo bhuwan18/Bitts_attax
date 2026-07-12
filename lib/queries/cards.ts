@@ -49,6 +49,23 @@ export function useCardsInfinite(filters: CardFilters = {}) {
   });
 }
 
+export function useRecentCards(limit = 10) {
+  const supabase = useSupabase();
+
+  return useQuery({
+    queryKey: ["cards", "recent", limit],
+    queryFn: async (): Promise<CardListItem[]> => {
+      const { data, error } = await supabase
+        .from("cards")
+        .select("id, name, team, rarity, ovr_rating, base_price, image_url")
+        .order("created_at", { ascending: false })
+        .limit(limit);
+      if (error) throw error;
+      return (data ?? []) as CardListItem[];
+    },
+  });
+}
+
 export function useCard(cardId: string) {
   const supabase = useSupabase();
 

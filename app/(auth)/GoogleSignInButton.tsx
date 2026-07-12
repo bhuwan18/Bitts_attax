@@ -19,7 +19,7 @@ export function GoogleSignInButton() {
     // Preserve where the user was headed (proxy.ts sets ?redirectTo when it
     // bounces an unauthenticated request to /login). Read it at click time so
     // this component doesn't need a Suspense boundary for useSearchParams.
-    const next = new URLSearchParams(window.location.search).get("redirectTo") ?? "/cards";
+    const next = new URLSearchParams(window.location.search).get("redirectTo") ?? "/";
     const callbackUrl = new URL("/auth/callback", window.location.origin);
     callbackUrl.searchParams.set("redirectTo", next);
 

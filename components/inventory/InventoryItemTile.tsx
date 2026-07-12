@@ -5,6 +5,8 @@ import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { QuantityStepper } from "@/components/shared/QuantityStepper";
+import { cn } from "@/lib/utils";
+import { RARITY_BORDER_CLASS, RARITY_GLOW_CLASS } from "@/lib/cards/rarity";
 import type { InventoryItemWithCard } from "@/lib/queries/inventory";
 
 export function InventoryItemTile({
@@ -19,8 +21,14 @@ export function InventoryItemTile({
   const imageUrl = item.custom_image_url ?? item.card.image_url;
 
   return (
-    <div className="clip-corner-sm flex flex-col gap-2 bg-card p-2 ring-1 ring-border">
-      <div className="clip-corner-sm relative aspect-[3/4] w-full overflow-hidden bg-muted">
+    <div className="flex flex-col gap-2 rounded-lg bg-card p-2">
+      <div
+        className={cn(
+          "card-surface-gradient relative aspect-[3/4] w-full overflow-hidden rounded-lg border-2",
+          RARITY_BORDER_CLASS[item.card.rarity] ?? RARITY_BORDER_CLASS.other,
+          RARITY_GLOW_CLASS[item.card.rarity] ?? RARITY_GLOW_CLASS.other
+        )}
+      >
         {imageUrl && (
           <Image
             src={imageUrl}
@@ -40,7 +48,7 @@ export function InventoryItemTile({
           variant="ghost"
           onClick={onRemove}
           aria-label="Remove from inventory"
-          className="absolute top-1 right-1 bg-background/80 text-muted-foreground backdrop-blur-sm hover:text-destructive"
+          className="absolute top-1 left-1 bg-background/80 text-muted-foreground backdrop-blur-sm hover:text-destructive"
         >
           <Trash2 className="size-4" />
         </Button>

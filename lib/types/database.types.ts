@@ -57,6 +57,61 @@ export type Database = {
   }
   public: {
     Tables: {
+      // Hand-added ahead of `supabase gen types` regeneration — defined in
+      // supabase/migrations/0011_gamification_activity_and_achievements.sql.
+      achievements: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id: string
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          name?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      activity_log: {
+        Row: {
+          activity_date: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          activity_date?: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          activity_date?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cards: {
         Row: {
           attributes: Json
@@ -497,6 +552,44 @@ export type Database = {
           },
         ]
       }
+      // Hand-added ahead of `supabase gen types` regeneration — defined in
+      // supabase/migrations/0011_gamification_activity_and_achievements.sql.
+      user_achievements: {
+        Row: {
+          achievement_id: string
+          id: string
+          unlocked_at: string
+          user_id: string
+        }
+        Insert: {
+          achievement_id: string
+          id?: string
+          unlocked_at?: string
+          user_id: string
+        }
+        Update: {
+          achievement_id?: string
+          id?: string
+          unlocked_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_achievements_achievement_id_fkey"
+            columns: ["achievement_id"]
+            isOneToOne: false
+            referencedRelation: "achievements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_achievements_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       want_items: {
         Row: {
           card_id: string
@@ -547,6 +640,12 @@ export type Database = {
       // supabase/migrations/0006_cards_filter_facets.sql, not yet applied.
       cards_distinct_teams: { Args: never; Returns: { team: string }[] }
       cards_distinct_set_names: { Args: never; Returns: { set_name: string }[] }
+      // Hand-added ahead of `supabase gen types` regeneration — defined in
+      // supabase/migrations/0012_trade_matches_rpc.sql, not yet applied.
+      find_trade_matches: {
+        Args: never
+        Returns: { other_user_id: string; they_have_count: number; mutual: boolean }[]
+      }
     }
     Enums: {
       [_ in never]: never
@@ -692,3 +791,5 @@ export type Trade = Database["public"]["Tables"]["trades"]["Row"]
 export type TradeListing = Database["public"]["Tables"]["trade_listings"]["Row"]
 export type Message = Database["public"]["Tables"]["messages"]["Row"]
 export type Notification = Database["public"]["Tables"]["notifications"]["Row"]
+export type Achievement = Database["public"]["Tables"]["achievements"]["Row"]
+export type UserAchievement = Database["public"]["Tables"]["user_achievements"]["Row"]

@@ -2,24 +2,23 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutGrid, Repeat, User, Package, Shield, Users, Bell } from "lucide-react";
+import { LayoutGrid, Repeat, User, Package, Shield, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCurrentProfile } from "@/lib/queries/auth";
-import { useUnreadNotificationsCount } from "@/lib/queries/notifications";
 
+// Home and Notifications live in MobileTopBar instead — 7-8 bottom tabs would
+// be too cramped for comfortable thumb targets, so this bar stays at 5(+Admin).
 const NAV_ITEMS = [
   { href: "/cards", label: "Cards", icon: LayoutGrid },
   { href: "/inventory", label: "Inventory", icon: Package },
   { href: "/trades", label: "Trades", icon: Repeat },
   { href: "/traders", label: "Traders", icon: Users },
-  { href: "/notifications", label: "Inbox", icon: Bell },
   { href: "/profile", label: "Profile", icon: User },
 ];
 
 export function MobileNav() {
   const pathname = usePathname();
   const { data: profile } = useCurrentProfile();
-  const { data: unreadCount } = useUnreadNotificationsCount();
 
   const navItems =
     profile?.role === "admin"
@@ -45,9 +44,6 @@ export function MobileNav() {
               )}
             >
               <Icon className="size-[18px]" strokeWidth={active ? 2.5 : 2} />
-              {href === "/notifications" && !!unreadCount && (
-                <span className="absolute top-0.5 right-1 size-2 rounded-full bg-destructive ring-2 ring-card" />
-              )}
             </span>
             <span
               className={cn(
