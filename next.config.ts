@@ -9,6 +9,14 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     optimizePackageImports: ["lucide-react"],
+    // Server Actions default to a 1MB request body cap — well under a phone
+    // photo. Both addToInventory's optional custom photo and scanCardPhoto's
+    // scan photo pass a File (up to MAX_IMAGE_BYTES = 8MB, see
+    // lib/validation/image.schema.ts) through a Server Action, so the limit
+    // needs headroom above that for multipart encoding overhead.
+    serverActions: {
+      bodySizeLimit: "10mb",
+    },
   },
 };
 
