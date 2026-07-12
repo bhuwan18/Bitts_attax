@@ -15,10 +15,10 @@ export default async function TradesPage() {
   } = await supabase.auth.getUser();
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-5 p-4 sm:p-6">
+    <div className="mx-auto flex max-w-4xl flex-col gap-5 p-4 sm:p-6">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="font-heading text-3xl font-extrabold tracking-tight">Trade Listings</h1>
+          <h1 className="font-heading text-3xl tracking-tight">Trade Listings</h1>
           <p className="text-sm text-muted-foreground">Open offers from other collectors.</p>
         </div>
         <Button size="sm" render={<Link href="/trades/new" />}>

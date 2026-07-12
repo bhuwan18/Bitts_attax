@@ -28,14 +28,14 @@ export default async function AdminDashboardPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="font-heading text-3xl font-extrabold tracking-tight">Admin</h1>
+        <h1 className="font-heading text-3xl tracking-tight">Admin</h1>
         <p className="text-sm text-muted-foreground">User list and cross-user activity.</p>
       </div>
 
       <StatStrip items={stats} size="lg" />
 
       <div className="flex flex-col gap-2">
-        <h2 className="font-heading text-lg font-bold tracking-tight">Recent trades</h2>
+        <h2 className="font-heading text-lg tracking-tight">Recent trades</h2>
         <AdminRecentTradesTable />
       </div>
     </div>

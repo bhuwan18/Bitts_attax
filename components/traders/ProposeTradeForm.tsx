@@ -50,7 +50,7 @@ export function ProposeTradeForm({ counterpartyId }: { counterpartyId: string })
 
   return (
     <div className="flex flex-col gap-4 rounded-xl bg-card p-4 ring-1 ring-border">
-      <p className="font-heading text-base font-bold">Propose a trade</p>
+      <p className="font-heading text-base">Propose a trade</p>
       <div className="grid gap-4 sm:grid-cols-[1fr_auto_1fr]">
         <InventoryColumn
           label="Your offer"

@@ -53,7 +53,7 @@ export default function TradeDetailPage({ params }: { params: Promise<{ tradeId:
   }
 
   return (
-    <div className="mx-auto flex max-w-lg flex-col gap-5 p-4 sm:p-6">
+    <div className="mx-auto flex max-w-2xl flex-col gap-5 p-4 sm:p-6">
       <div className="flex items-center justify-between">
         <h1 className="font-heading text-3xl tracking-tight">Trade</h1>
         <span
@@ -66,7 +66,13 @@ export default function TradeDetailPage({ params }: { params: Promise<{ tradeId:
         </span>
       </div>
 
-      {fairness && <FairnessMeter result={fairness} />}
+      {fairness && (
+        <FairnessMeter
+          result={fairness}
+          sideALabel={trade.initiator?.display_name ?? trade.initiator?.username ?? "Side A"}
+          sideBLabel={trade.counterparty?.display_name ?? trade.counterparty?.username ?? "Side B"}
+        />
+      )}
 
       <div className="grid grid-cols-2 gap-3">
         <TradeSide

@@ -21,7 +21,10 @@ export function TradeBrowseList({ currentUserId }: { currentUserId: string | nul
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    // Two columns from tablet up — a single centred column of listings leaves
+    // half a landscape iPad empty. `items-start` keeps cards their natural
+    // height instead of stretching short ones to match tall neighbours.
+    <div className="grid grid-cols-1 items-start gap-3 md:grid-cols-2">
       {listings.map((listing, i) => (
         <div
           key={listing.id}

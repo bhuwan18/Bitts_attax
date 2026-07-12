@@ -80,7 +80,7 @@ export function AdminUserActivityPanel({ userId }: { userId: string }) {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-2">
-      <h2 className="font-heading text-lg font-bold tracking-tight">{title}</h2>
+      <h2 className="font-heading text-lg tracking-tight">{title}</h2>
       {children}
     </div>
   );

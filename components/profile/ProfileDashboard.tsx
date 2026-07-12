@@ -2,11 +2,12 @@
 
 import { StatStrip } from "@/components/shared/StatStrip";
 import { LevelProgress } from "@/components/profile/LevelProgress";
-import { AchievementBadgeGrid } from "@/components/profile/AchievementBadgeGrid";
-import { AchievementEvaluator } from "@/components/profile/AchievementEvaluator";
 import { useInventory } from "@/lib/queries/inventory";
 import { useMyCompletedTradesCount } from "@/lib/queries/trades";
 
+// Level + stats only. The badge grid and account rows are composed by
+// app/(main)/profile/page.tsx, which sits them side-by-side on wide screens —
+// they can't live here because the account rows are server-rendered.
 export function ProfileDashboard() {
   const { data: inventory } = useInventory();
   const { data: tradesCompleted } = useMyCompletedTradesCount();
@@ -25,8 +26,6 @@ export function ProfileDashboard() {
           { label: "Trades done", value: tradesCompleted ?? 0, accent: "text-brand" },
         ]}
       />
-      <AchievementBadgeGrid />
-      <AchievementEvaluator />
     </div>
   );
 }

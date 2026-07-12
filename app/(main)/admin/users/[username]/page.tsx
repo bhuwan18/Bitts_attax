@@ -32,7 +32,7 @@ export default async function AdminUserDetailPage({
 
       <div className="flex items-center gap-3">
         <div>
-          <h1 className="font-heading text-3xl font-extrabold tracking-tight">
+          <h1 className="font-heading text-3xl tracking-tight">
             {profile.display_name ?? profile.username}
           </h1>
           <p className="text-sm text-muted-foreground">@{profile.username}</p>

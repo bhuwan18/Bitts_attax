@@ -15,7 +15,11 @@ export function AchievementBadgeGrid() {
   return (
     <div>
       <h2 className="mb-3 font-heading text-lg">Badges</h2>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      {/* Deliberately a fixed 2-column grid. A viewport breakpoint (md:grid-cols-4)
+          can't see that this grid sits inside a ~430px column on landscape, so it
+          would cram four badges to ~107px each and shred the label text. Two
+          columns stay comfortable in every context this renders in. */}
+      <div className="grid grid-cols-2 gap-3">
         {achievements.map((achievement, i) => {
           const Icon = ACHIEVEMENT_ICON[achievement.id] ?? DEFAULT_ACHIEVEMENT_ICON;
           const isUnlocked = unlockedIds.has(achievement.id);

@@ -10,7 +10,7 @@ export default function OfflinePage() {
       <div className="flex size-16 items-center justify-center rounded-2xl bg-muted">
         <WifiOff className="size-7 text-muted-foreground" />
       </div>
-      <h1 className="font-heading text-2xl font-extrabold tracking-tight">You&apos;re offline</h1>
+      <h1 className="font-heading text-2xl tracking-tight">You&apos;re offline</h1>
       <p className="max-w-sm text-sm text-muted-foreground">
         No connection right now. Previously viewed cards you browsed are still available, but
         inventory, trading, and chat need a live connection.

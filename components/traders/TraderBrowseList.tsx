@@ -18,7 +18,9 @@ export function TraderBrowseList() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="relative">
+      {/* Capped to a control width — a search box shouldn't stretch across the
+          full two-column trader grid on a wide screen. */}
+      <div className="relative max-w-xl">
         <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="Search traders…"
@@ -37,7 +39,9 @@ export function TraderBrowseList() {
         </div>
       )}
 
-      <div className="flex flex-col gap-2">
+      {/* Two columns from tablet up — trader rows are thin, so a single centred
+          column wastes most of a landscape iPad. */}
+      <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
         {traders?.map((trader, i) => (
           <div
             key={trader.id}
