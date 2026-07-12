@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
+import { useCurrentUser } from "@/lib/queries/auth";
 import {
   addToInventory,
   addWantItem,
@@ -27,33 +28,39 @@ export interface WantItemWithCard {
 
 export function useInventory() {
   const supabase = useSupabase();
+  const { data: user } = useCurrentUser();
 
   return useQuery({
-    queryKey: ["inventory"],
+    queryKey: ["inventory", user?.id],
     queryFn: async (): Promise<InventoryItemWithCard[]> => {
       const { data, error } = await supabase
         .from("inventory_items")
         .select("id, quantity, condition, custom_image_url, card:cards(*)")
+        .eq("user_id", user!.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as unknown as InventoryItemWithCard[];
     },
+    enabled: !!user,
   });
 }
 
 export function useWantList() {
   const supabase = useSupabase();
+  const { data: user } = useCurrentUser();
 
   return useQuery({
-    queryKey: ["wantList"],
+    queryKey: ["wantList", user?.id],
     queryFn: async (): Promise<WantItemWithCard[]> => {
       const { data, error } = await supabase
         .from("want_items")
         .select("id, priority, card:cards(*)")
+        .eq("user_id", user!.id)
         .order("priority", { ascending: false });
       if (error) throw error;
       return (data ?? []) as unknown as WantItemWithCard[];
     },
+    enabled: !!user,
   });
 }
 
@@ -84,20 +91,22 @@ export function useAddToInventory() {
 export function useUpdateInventoryQuantity() {
   const queryClient = useQueryClient();
   const invalidate = useInvalidateInventory();
+  const { data: user } = useCurrentUser();
   return useMutation({
     mutationFn: ({ itemId, quantity }: { itemId: string; quantity: number }) =>
       updateInventoryQuantity(itemId, quantity),
     onMutate: async ({ itemId, quantity }) => {
-      await queryClient.cancelQueries({ queryKey: ["inventory"] });
-      const previousItems = queryClient.getQueryData<InventoryItemWithCard[]>(["inventory"]);
-      queryClient.setQueryData<InventoryItemWithCard[]>(["inventory"], (items) =>
+      const queryKey = ["inventory", user?.id];
+      await queryClient.cancelQueries({ queryKey });
+      const previousItems = queryClient.getQueryData<InventoryItemWithCard[]>(queryKey);
+      queryClient.setQueryData<InventoryItemWithCard[]>(queryKey, (items) =>
         items?.map((item) => (item.id === itemId ? { ...item, quantity } : item))
       );
-      return { previousItems };
+      return { previousItems, queryKey };
     },
     onError: (_error, _variables, context) => {
       if (context?.previousItems) {
-        queryClient.setQueryData(["inventory"], context.previousItems);
+        queryClient.setQueryData(context.queryKey, context.previousItems);
       }
     },
     onSettled: invalidate,

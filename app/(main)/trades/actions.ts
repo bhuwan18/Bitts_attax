@@ -93,7 +93,10 @@ export async function proposeTrade(input: z.infer<typeof ProposeTradeSchema>) {
   return { tradeId: trade.id as string };
 }
 
-const TradeStatusSchema = z.enum(["accepted", "rejected", "completed", "cancelled"]);
+// "completed" is deliberately not settable here — see confirmTradeCompletion
+// below, which requires both participants to confirm before the status
+// actually flips (and RPC-triggers the inventory transfer).
+const TradeStatusSchema = z.enum(["accepted", "rejected", "cancelled"]);
 
 export async function updateTradeStatus(tradeId: string, status: z.infer<typeof TradeStatusSchema>) {
   const parsedTradeId = z.uuid().parse(tradeId);
@@ -107,13 +110,40 @@ export async function updateTradeStatus(tradeId: string, status: z.infer<typeof 
 
   if (error) throw new Error(error.message);
   revalidatePath(`/trades/${parsedTradeId}`);
+}
+
+// Requires both the initiator and counterparty to independently call this
+// (they've physically met and exchanged cards) before the trade's status
+// flips to "completed" — see confirm_trade_completion() in
+// supabase/migrations/0015_trade_completion_confirmations.sql for the
+// race-safe confirmation logic and the trigger that then transfers the
+// traded cards between both parties' inventories. Safe to call again after
+// your own confirmation is already recorded — it's a no-op until the other
+// party also confirms.
+export async function confirmTradeCompletion(tradeId: string): Promise<{ status: string }> {
+  const parsedTradeId = z.uuid().parse(tradeId);
+  const { supabase } = await requireUser();
+
+  const { data, error } = await supabase.rpc("confirm_trade_completion", {
+    p_trade_id: parsedTradeId,
+  });
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/trades/${parsedTradeId}`);
+  revalidatePath("/trades");
+  revalidatePath("/inventory");
+
+  const status = data?.status ?? "accepted";
 
   // Only the calling participant's achievements can be evaluated here — a
   // Server Action only has this session's identity, never the other party's
   // (and never a service-role client, per this app's trust model). The other
   // participant's newly-completed-trade achievement gets caught by
   // AchievementEvaluator the next time they load their own Profile page.
-  if (parsedStatus === "completed") {
+  if (status === "completed") {
     await evaluateAchievements();
   }
+
+  return { status };
 }

@@ -52,7 +52,69 @@ export function useMyCompletedTradesCount() {
 export interface TradeWithDetails extends Trade {
   initiator: Pick<Profile, "id" | "username" | "display_name"> | null;
   counterparty: Pick<Profile, "id" | "username" | "display_name"> | null;
-  items: { offered_by: string; quantity: number; card: Card }[];
+  // availableQuantity is the giver's *current* inventory_items.quantity for
+  // this card — not stored, computed at query time (see attachAvailability
+  // below) — so an item can end up short of what was offered if the giver
+  // edited their Haves after proposing. Only meaningful while the trade is
+  // still "proposed"/"accepted"; for closed trades it's set to `quantity` (a
+  // "not applicable, don't flag" sentinel rather than 0) since the giver's
+  // current inventory no longer has anything to do with a dead or already
+  // fully-transferred trade.
+  items: { offered_by: string; quantity: number; card: Card; availableQuantity: number }[];
+}
+
+// Only these statuses can still be fulfilled — no point flagging a shortfall
+// on a trade that's rejected/cancelled (moot) or completed (items already moved).
+const OPEN_TRADE_STATUSES = new Set(["proposed", "accepted"]);
+
+// Flags trade_items whose offered_by no longer has enough of that card in
+// their inventory_items — e.g. they removed it or lowered its quantity after
+// proposing/accepting the trade. inventory_items has a public select policy
+// (0009_user_discovery_and_notifications.sql), so a participant's own
+// session can read the *other* party's current quantity here.
+async function attachAvailability(
+  supabase: ReturnType<typeof useSupabase>,
+  trades: TradeWithDetails[]
+): Promise<TradeWithDetails[]> {
+  const pairs = new Set<string>();
+  for (const trade of trades) {
+    if (!OPEN_TRADE_STATUSES.has(trade.status)) continue;
+    for (const item of trade.items) pairs.add(`${item.offered_by}:${item.card.id}`);
+  }
+
+  let availability = new Map<string, number>();
+  if (pairs.size > 0) {
+    const userIds = [...new Set([...pairs].map((p) => p.split(":")[0]))];
+    const cardIds = [...new Set([...pairs].map((p) => p.split(":")[1]))];
+
+    const { data, error } = await supabase
+      .from("inventory_items")
+      .select("user_id, card_id, quantity")
+      .in("user_id", userIds)
+      .in("card_id", cardIds);
+    if (error) throw error;
+
+    availability = new Map((data ?? []).map((row) => [`${row.user_id}:${row.card_id}`, row.quantity]));
+  }
+
+  return trades.map((trade) => {
+    const isOpen = OPEN_TRADE_STATUSES.has(trade.status);
+    return {
+      ...trade,
+      items: trade.items.map((item) => ({
+        ...item,
+        availableQuantity: isOpen
+          ? (availability.get(`${item.offered_by}:${item.card.id}`) ?? 0)
+          : item.quantity,
+      })),
+    };
+  });
+}
+
+// Cards this trade is still relying on that the giver no longer has enough
+// of. Empty for closed trades (see attachAvailability's sentinel above).
+export function getInsufficientTradeItems(trade: TradeWithDetails) {
+  return trade.items.filter((item) => item.availableQuantity < item.quantity);
 }
 
 export function useTrade(tradeId: string) {
@@ -70,7 +132,8 @@ export function useTrade(tradeId: string) {
         .single();
 
       if (error) throw error;
-      return data as unknown as TradeWithDetails;
+      const [trade] = await attachAvailability(supabase, [data as unknown as TradeWithDetails]);
+      return trade;
     },
     enabled: !!tradeId,
   });
@@ -92,7 +155,7 @@ export function useMyTrades() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return (data ?? []) as unknown as TradeWithDetails[];
+      return attachAvailability(supabase, (data ?? []) as unknown as TradeWithDetails[]);
     },
     enabled: !!user,
   });

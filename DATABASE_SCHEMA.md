@@ -27,6 +27,16 @@ Full SQL lives in `supabase/migrations/`, applied in order:
 12. `0012_trade_matches_rpc.sql` — adds the `find_trade_matches()` RPC, a single-round-trip
     set-intersection query over the already-public `inventory_items`/`want_items` (same
     `postgrest-js` limitation `cards_distinct_teams()` et al. work around in `0006`)
+13. `0013_trade_items_insert_policy_fix.sql` — replaces the `trade_items` insert policy so the
+    initiator can insert items tagged `offered_by` = either participant at proposal time (the
+    original policy only allowed `offered_by = auth.uid()`, rejecting any requested counterparty item)
+14. `0014_google_oauth_display_name.sql` — makes `handle_new_user()` prefer Google OAuth's
+    `full_name`/`name`/`avatar_url` metadata over the email-handle fallback, and backfills profiles
+    stuck with the old fallback
+15. `0015_trade_completion_confirmations.sql` — adds `trades.initiator_completed_at`/
+    `counterparty_completed_at`, the `confirm_trade_completion()` RPC (race-safe two-party
+    confirmation), and the `transfer_trade_items()` trigger that moves traded cards between both
+    parties' inventories once both confirm — see below
 
 All tables live in the `public` schema. `auth.users` is Supabase-managed.
 
@@ -157,8 +167,45 @@ diverge from the original listing's terms.
 | `status` | `text` | check: `proposed, accepted, rejected, completed, cancelled` |
 | `fairness_score` | `numeric(5,2)` | nullable until computed |
 | `fairness_breakdown` | `jsonb` | full `FairnessResult` snapshot, for auditability |
+| `initiator_completed_at` | `timestamptz` | nullable — set once the initiator confirms the trade is done |
+| `counterparty_completed_at` | `timestamptz` | nullable — set once the counterparty confirms the trade is done |
 
 Check constraint: `initiator_id <> counterparty_id`.
+
+#### Completing a trade (`0015_trade_completion_confirmations.sql`)
+
+`status` only ever reaches `'completed'` through both participants independently confirming — never
+by either party (or a Server Action) setting `status = 'completed'` directly, so
+`app/(main)/trades/actions.ts`'s `updateTradeStatus` deliberately doesn't accept `"completed"` as a
+value; only `confirmTradeCompletion(tradeId)` can produce that transition, by calling the
+`confirm_trade_completion(p_trade_id)` RPC:
+
+- `security invoker` — RLS's existing "participants update their trades" policy already grants the
+  caller full row access, so no privilege escalation is needed.
+- `select ... for update` locks the row, so two participants confirming within the same instant
+  can't both observe the other's confirmation column as still null — whichever call runs second
+  always sees the first call's committed write. This is what makes "both confirmed" race-safe rather
+  than a lost update.
+- Sets the caller's own `initiator_completed_at`/`counterparty_completed_at`, and flips `status` to
+  `'completed'` in the same statement only once both columns are non-null. Raises if the trade isn't
+  `'accepted'` or the caller isn't a participant.
+
+Because the finalizing call's `UPDATE` explicitly targets `status` (even when only one side has
+confirmed and the value doesn't change), the existing `trg_notify_trade_status` trigger
+(`after update of status`, `0009`) fires on every confirmation call, but its own `new.status is
+distinct from old.status` guard means a `trade_completed` notification is only actually created on
+the call that finalizes the transition.
+
+`trg_transfer_trade_items` (`after update of status ... when (new.status = 'completed' and
+old.status is distinct from 'completed')`) then runs `transfer_trade_items()`, which is
+`security definer` (same rationale as `notify_trade_event()` — moving cards touches both parties'
+`inventory_items`/`want_items` rows, and RLS on both is owner-only, so the confirming user's own
+session can't write the other party's rows). For each `trade_items` row it decrements the giver's
+`inventory_items` quantity (clamped at 0 with `greatest()`, then deletes the row if it hits 0 —
+defensive against the giver having edited their inventory between proposing and completing),
+upserts the receiver's `inventory_items` quantity (`on conflict (user_id, card_id) do update`), and
+deletes any matching `want_items` row for the receiver (they no longer want a card they just
+received). It's only ever invoked by the trigger, never reachable directly by a client.
 
 ### `trade_items`
 Concrete cards each party contributes to a specific trade (distinct from `trade_listing_items`).
@@ -288,7 +335,7 @@ Every table has RLS enabled. Summary (full policies in `0002_rls_policies.sql`):
 | `want_items` | full CRUD only where `auth.uid() = user_id`; **plus** select for admins; **plus** select: public (`0010`, shown on a trader's public profile — writes are still owner-only) |
 | `trade_listings` | select: public; insert/update/delete: owner only |
 | `trade_listing_items` | select: public; insert/update/delete: only if the parent listing's `owner_id = auth.uid()` |
-| `trades` | select/update: `auth.uid() in (initiator_id, counterparty_id)`; insert: `auth.uid() = initiator_id`; **plus** select for admins |
+| `trades` | select/update: `auth.uid() in (initiator_id, counterparty_id)`; insert: `auth.uid() = initiator_id`; **plus** select for admins. The `completed` transition additionally goes through the `confirm_trade_completion()` RPC (`security invoker`, so still bound by this same policy) rather than a raw update — see [Completing a trade](#completing-a-trade-0015_trade_completion_confirmationssql) above |
 | `trade_items` | select: participants of parent trade; insert: only the trade's `initiator_id` (who sets both sides' items at proposal time — the counterparty only accepts/rejects, never edits items), and only for `offered_by in (initiator_id, counterparty_id)`; delete: the participant whose `offered_by = auth.uid()`; **plus** select for admins |
 | `messages` | select/insert: `auth.uid() in (initiator_id, counterparty_id)` of the parent trade — the core privacy gate for chat; deliberately **not** given an admin bypass, so trade chat stays private |
 | `fairness_rules` | select: public; write: service-role only |

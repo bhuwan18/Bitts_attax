@@ -494,35 +494,44 @@ export type Database = {
           },
         ]
       }
+      // initiator_completed_at/counterparty_completed_at hand-added ahead of
+      // `supabase gen types` regeneration — defined in
+      // supabase/migrations/0015_trade_completion_confirmations.sql.
       trades: {
         Row: {
+          counterparty_completed_at: string | null
           counterparty_id: string
           created_at: string
           fairness_breakdown: Json | null
           fairness_score: number | null
           id: string
+          initiator_completed_at: string | null
           initiator_id: string
           listing_id: string | null
           status: string
           updated_at: string
         }
         Insert: {
+          counterparty_completed_at?: string | null
           counterparty_id: string
           created_at?: string
           fairness_breakdown?: Json | null
           fairness_score?: number | null
           id?: string
+          initiator_completed_at?: string | null
           initiator_id: string
           listing_id?: string | null
           status?: string
           updated_at?: string
         }
         Update: {
+          counterparty_completed_at?: string | null
           counterparty_id?: string
           created_at?: string
           fairness_breakdown?: Json | null
           fairness_score?: number | null
           id?: string
+          initiator_completed_at?: string | null
           initiator_id?: string
           listing_id?: string | null
           status?: string
@@ -645,6 +654,24 @@ export type Database = {
       find_trade_matches: {
         Args: never
         Returns: { other_user_id: string; they_have_count: number; mutual: boolean }[]
+      }
+      // Hand-added ahead of `supabase gen types` regeneration — defined in
+      // supabase/migrations/0015_trade_completion_confirmations.sql.
+      confirm_trade_completion: {
+        Args: { p_trade_id: string }
+        Returns: {
+          counterparty_completed_at: string | null
+          counterparty_id: string
+          created_at: string
+          fairness_breakdown: Json | null
+          fairness_score: number | null
+          id: string
+          initiator_completed_at: string | null
+          initiator_id: string
+          listing_id: string | null
+          status: string
+          updated_at: string
+        }
       }
     }
     Enums: {

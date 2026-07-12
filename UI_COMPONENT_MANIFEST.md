@@ -55,11 +55,13 @@ Used by: `app/(main)/inventory/page.tsx` (Tabs: Haves / Wants).
 | `HaveWantPicker.tsx` | Rich card picker (thumbnail + team + OVR), reused for both listing sides; surfaces `suggestions` (the caller passes inventory for Haves, want-list for Wants) before the user types, falls back to catalog search via `useCards`, and marks already-added cards. Exports `CardOption`/`PickedItem` + `cardToOption` |
 | `ListingPreview.tsx` | Read-only preview mirroring `TradeListingCard`'s offering/looking-for pills, shown live as the form is filled |
 | `FairnessMeter.tsx` | Renders a `FairnessResult` as a labeled progress bar (color keyed to fairness label) |
-| `MyTradesList.tsx` | `useMyTrades()` — every trade the caller is a party to (either side), newest first; give/get item badges, status badge, links to the trade detail page and its chat, and a Cancel button (`updateTradeStatus(id, "cancelled")`) shown only to the initiator while `status === "proposed"` |
+| `MyTradesList.tsx` | `useMyTrades()` — every trade the caller is a party to (either side), grouped into an active list and a "Completed" section below it; give/get item badges, status badge, links to the trade detail page and its chat, a Cancel button (`updateTradeStatus(id, "cancelled")`) shown only to the initiator while `status === "proposed"`, a Mark complete button (`confirmTradeCompletion`) shown while `status === "accepted"` and the caller hasn't already confirmed — with a "Waiting for ‹name› to confirm…" line once they have — and a compact warning banner (`getInsufficientTradeItems`) when a giver has since edited their Haves below what the trade still promises |
 
 Used by: `app/(main)/trades/page.tsx` (Tabs: Browse — `TradeBrowseList` — / My Trades —
 `MyTradesList`), `app/(main)/trades/new/page.tsx` (create), `app/(main)/trades/[tradeId]/page.tsx`
-(detail — renders `FairnessMeter` plus give/get badges and accept/decline actions).
+(detail — renders `FairnessMeter`, give/get badges, accept/decline actions, the same Mark complete /
+"waiting on the other party" flow as `MyTradesList.tsx`, and a per-card breakdown of the same
+insufficient-stock warning).
 
 ## Traders (`components/traders/`)
 
@@ -161,7 +163,7 @@ Not components, but the client-side data layer every component above depends on:
 
 - `lib/queries/cards.ts` — `useCards(filters)` (used by `HaveWantPicker`/`CardPicker`), `useCard(id)`, `useCardsInfinite(filters)` (used by `CardSearch`, paginated via `lib/queries/cardsShared.ts`), `useRecentCards(limit?)` (used by `RecentCardsRail`)
 - `lib/queries/inventory.ts` — `useInventory()`, `useWantList()`, plus mutation hooks wrapping each Server Action
-- `lib/queries/trades.ts` — `useTradeListings()`, `useTrade(tradeId)`, `useMyTrades()` (every trade the caller is a party to, for `MyTradesList`), `useMyCompletedTradesCount()` (used by `ProfileDashboard`'s stat row and `evaluateAchievements`' `trader_x3` check)
+- `lib/queries/trades.ts` — `useTradeListings()`, `useTrade(tradeId)`, `useMyTrades()` (every trade the caller is a party to, for `MyTradesList`) — both attach a computed (not stored) `availableQuantity` per item and expose `getInsufficientTradeItems(trade)` to flag a giver's Haves having dropped below what an open trade still promises — `useMyCompletedTradesCount()` (used by `ProfileDashboard`'s stat row and `evaluateAchievements`' `trader_x3` check)
 - `lib/queries/matches.ts` — `useTradeMatches(limit?)`, wraps the `find_trade_matches()` RPC + a follow-up `profiles` lookup
 - `lib/queries/gamification.ts` — `useCurrentStreak()`, `useAchievements()` (public catalog), `useUnlockedAchievements()`
 - `lib/queries/messages.ts` — `useMessages(tradeId)`, `useSendMessage(tradeId)`

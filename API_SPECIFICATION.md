@@ -69,10 +69,35 @@ counterpartyId`). Revalidates `/trades`.
 
 ### `updateTradeStatus(tradeId: string, status): Promise<void>`
 ```ts
-status: "accepted" | "rejected" | "completed" | "cancelled"
+status: "accepted" | "rejected" | "cancelled"
 ```
 Updates a trade's status. RLS restricts this to the trade's two participants. Revalidates
-`/trades/[tradeId]`.
+`/trades/[tradeId]`. `"completed"` is deliberately not an accepted value here — see
+`confirmTradeCompletion` below.
+
+### `confirmTradeCompletion(tradeId: string): Promise<{ status: string }>`
+Records that the calling participant confirms the trade is done (they've physically met and
+exchanged cards), by calling the `confirm_trade_completion(p_trade_id)` Postgres RPC (see
+[DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md#completing-a-trade-0015_trade_completion_confirmationssql)
+for the race-safe locking and the trigger it drives). Only valid while the trade's status is
+`accepted`; only the trade's two participants may call it. The trade's status only actually flips to
+`completed` — and the traded cards only actually move between both parties' inventories — once
+**both** the initiator and counterparty have called this. Calling it again after your own
+confirmation is already recorded is a safe no-op; you're just waiting on the other party.
+Revalidates `/trades/[tradeId]`, `/trades`, and `/inventory` (the last in case the transfer already
+happened by the time this call returns). Calls `evaluateAchievements()` if this call was the one
+that finalized the trade to `completed`.
+
+### Insufficient-stock flagging (read-only, no Server Action)
+
+`removeInventoryItem`/`updateInventoryQuantity` (above) don't check whether the card they're
+touching is committed to an open trade — editing your Haves never blocks or auto-cancels a trade.
+Instead, `useTrade`/`useMyTrades` (`lib/queries/trades.ts`) each attach a computed
+`availableQuantity` to every `trade_item` (the giver's *current* `inventory_items.quantity` for that
+card, read via its existing public `select` policy — see
+[DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md#row-level-security)) and expose
+`getInsufficientTradeItems(trade)`, so `TradeDetailPage`/`MyTradesList` can warn "this trade now
+promises more than the giver has" without any DB writes.
 
 ## Fairness (`app/(main)/trades/[tradeId]/fairness-actions.ts`)
 

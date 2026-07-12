@@ -2,15 +2,15 @@
 
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
-import { MessageCircle, Check, X } from "lucide-react";
+import { MessageCircle, Check, X, CheckCheck, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { FairnessMeter } from "@/components/trades/FairnessMeter";
-import { useTrade } from "@/lib/queries/trades";
+import { useTrade, getInsufficientTradeItems } from "@/lib/queries/trades";
 import { useCurrentUser } from "@/lib/queries/auth";
 import { computeAndPersistFairness } from "./fairness-actions";
-import { updateTradeStatus } from "@/app/(main)/trades/actions";
+import { updateTradeStatus, confirmTradeCompletion } from "@/app/(main)/trades/actions";
 import { TRADE_STATUS_STYLE } from "@/lib/trades/status";
 import type { FairnessResult } from "@/lib/fairness";
 
@@ -37,8 +37,22 @@ export default function TradeDetailPage({ params }: { params: Promise<{ tradeId:
 
   const myGive = trade.items.filter((i) => i.offered_by === trade.initiator_id);
   const myGet = trade.items.filter((i) => i.offered_by === trade.counterparty_id);
+  const isInitiator = currentUser?.id === trade.initiator_id;
   const isCounterparty = currentUser?.id === trade.counterparty_id;
   const canRespond = isCounterparty && trade.status === "proposed";
+
+  const myCompletedAt = isInitiator ? trade.initiator_completed_at : trade.counterparty_completed_at;
+  const theirCompletedAt = isInitiator ? trade.counterparty_completed_at : trade.initiator_completed_at;
+  const otherParty = isInitiator ? trade.counterparty : trade.initiator;
+  const otherPartyName = otherParty?.display_name ?? otherParty?.username ?? "the other trader";
+  const canConfirmCompletion = trade.status === "accepted" && !myCompletedAt;
+  const awaitingTheirConfirmation = trade.status === "accepted" && !!myCompletedAt && !theirCompletedAt;
+  const insufficientItems = getInsufficientTradeItems(trade);
+
+  function nameFor(userId: string) {
+    const profile = userId === trade!.initiator_id ? trade!.initiator : trade!.counterparty;
+    return profile?.display_name ?? profile?.username ?? "This trader";
+  }
 
   async function respond(status: "accepted" | "rejected") {
     setUpdating(true);
@@ -47,6 +61,18 @@ export default function TradeDetailPage({ params }: { params: Promise<{ tradeId:
       await refetch();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to update trade.");
+    } finally {
+      setUpdating(false);
+    }
+  }
+
+  async function confirmCompletion() {
+    setUpdating(true);
+    try {
+      await confirmTradeCompletion(tradeId);
+      await refetch();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to confirm completion.");
     } finally {
       setUpdating(false);
     }
@@ -65,6 +91,21 @@ export default function TradeDetailPage({ params }: { params: Promise<{ tradeId:
           {trade.status}
         </span>
       </div>
+
+      {insufficientItems.length > 0 && (
+        <div className="flex items-start gap-3 rounded-xl border border-warning/30 bg-warning/10 p-3">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
+          <div className="flex flex-col gap-1 text-sm">
+            <p className="font-medium text-warning">Some offered cards may no longer be available</p>
+            {insufficientItems.map((item) => (
+              <p key={item.card.id} className="text-muted-foreground">
+                {nameFor(item.offered_by)} now has {item.availableQuantity} of {item.card.name}, but{" "}
+                {item.quantity} {item.quantity === 1 ? "was" : "were"} offered.
+              </p>
+            ))}
+          </div>
+        </div>
+      )}
 
       {fairness && (
         <FairnessMeter
@@ -101,6 +142,19 @@ export default function TradeDetailPage({ params }: { params: Promise<{ tradeId:
             Decline
           </Button>
         </div>
+      )}
+
+      {canConfirmCompletion && (
+        <Button disabled={updating} onClick={confirmCompletion} className="w-full">
+          <CheckCheck className="size-4" />
+          Mark as complete
+        </Button>
+      )}
+
+      {awaitingTheirConfirmation && (
+        <p className="text-center text-sm text-muted-foreground">
+          Waiting for {otherPartyName} to confirm the trade is complete…
+        </p>
       )}
 
       <Button variant="secondary" render={<Link href={`/trades/${tradeId}/chat`} />}>
