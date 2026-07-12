@@ -7,6 +7,10 @@ const Toaster = ({ ...props }: ToasterProps) => {
   return (
     <Sonner
       theme="dark"
+      // Sonner defaults to bottom-right, which now sits right under the
+      // floating BottomNav pill at every screen size — top-center is clear
+      // of both that and TopBar's logo/notification-bell corners.
+      position="top-center"
       className="toaster group"
       icons={{
         success: (

@@ -183,6 +183,14 @@
   }
 }
 
+/* Floating pill nav — an opaque elevation + soft brand-color ambient glow,
+   the "our colors/glow" answer to translucent glassmorphism nav bars. */
+@utility nav-float-glow {
+  box-shadow:
+    0 10px 34px -10px rgba(0, 0, 0, 0.55),
+    0 0 28px -6px color-mix(in oklch, var(--primary) 32%, transparent);
+}
+
 /* Trading-card surface — a subtle diagonal gradient instead of a flat card fill.
    Also the shared hover-intensify hook for every rarity-glow-* tile (see above). */
 @utility card-surface-gradient {

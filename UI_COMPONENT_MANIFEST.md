@@ -93,7 +93,7 @@ Used by: `app/(main)/profile/page.tsx` (own profile — server-rendered avatar/n
 
 | Component | Purpose |
 |---|---|
-| `NotificationBell.tsx` | Unread-count badge (`useUnreadNotificationsCount()`) + live updates (`useNotificationsChannel()`), links to `/notifications` — its only mount point is `MobileTopBar.tsx`, but `Sidebar.tsx` renders its own unread dot next to the Notifications nav item using the same hooks |
+| `NotificationBell.tsx` | Unread-count badge (`useUnreadNotificationsCount()`) + live updates (`useNotificationsChannel()`), links to `/notifications` — its only mount point is `TopBar.tsx` |
 | `NotificationList.tsx` | `useNotifications()` + "Mark all read" (`useMarkAllNotificationsRead()`), renders `NotificationRow`s, empty state |
 | `NotificationRow.tsx` | Per-type message text, relative timestamp, unread styling; click marks read (`markNotificationRead`) and navigates to the related `/trades/[tradeId]` |
 
@@ -127,17 +127,21 @@ which redirects non-admins to `/` — see [DATABASE_SCHEMA.md](./DATABASE_SCHEMA
 
 ## Navigation (`components/nav/`)
 
+One universal nav shell — no sidebar, no desktop/mobile split. `TopBar` + `BottomNav` render at
+every screen size and orientation (a prior pass had a left sidebar on wide screens; deliberately
+replaced by this floating pill everywhere per direct feedback that it worked better universally).
+
 | Component | Purpose |
 |---|---|
-| `Sidebar.tsx` | Persistent 216px left sidebar — desktop only (`hidden md:flex`, `md:sticky md:top-0 md:h-screen`, not `fixed`, so `<main>` never needs manual margin-syncing). Home / Cards / Inventory / Trades / Traders / Notifications / Profile & Stats, plus Admin for admins; unread-notifications dot next to the Notifications item; user avatar + name pinned at the bottom via `mt-auto`, linking to `/profile` |
-| `MobileTopBar.tsx` | Sticky top bar — mobile only (`md:hidden`). Logo/wordmark (links to `/`) + `NotificationBell.tsx`; this is the bell's only mount point |
-| `MobileNav.tsx` | Fixed bottom tab bar — mobile only (`md:hidden`). Cards / Inventory / Trades / Traders / Profile, plus Admin for admins. Home and Notifications deliberately live in `MobileTopBar` instead, not the bottom bar — 7–8 bottom tabs would be too cramped for comfortable thumb targets |
+| `TopBar.tsx` | Sticky top bar, full-bleed background with a `max-w-3xl` centered inner row. Logo/wordmark (links to `/`) + `NotificationBell.tsx`; this is the bell's only mount point |
+| `BottomNav.tsx` | Fixed floating pill nav, inset from the screen edges (not edge-to-edge), opaque `bg-card` with a soft brand-color ambient glow (`nav-float-glow` utility) rather than translucent glassmorphism. Cards is elevated into its own separate floating glowing button above the pill (the app's "hero" content gets star billing, the same idea as an Instagram-style floating create button); the pill itself holds Inventory / Trades / Traders / Profile, plus Admin for admins |
 | `LogoutButton.tsx` | Signs out via Supabase and redirects to `/login` |
 
-Used by: `app/(main)/layout.tsx`, which lays out `Sidebar` + `<main>` side-by-side on desktop
-(`flex md:flex-row`) and stacks `MobileTopBar` → `<main>` → `MobileNav` vertically on mobile — only
-the nav pieces relevant to the current viewport width actually render any visible chrome, via
-Tailwind breakpoints rather than separate layouts.
+Used by: `app/(main)/layout.tsx`, a simple vertical stack — `TopBar` → `<main>` (with bottom padding
+reserved so content never sits under the floating nav) → `BottomNav`. No responsive branching at
+the layout level at all; `BottomNav`'s own pill width is capped by design (`max-w-md`), not by the
+viewport, so it looks the same (centered, capped-width) whether the screen is a phone or a desktop
+monitor.
 
 ## Providers (`components/providers/`)
 

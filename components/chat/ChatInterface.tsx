@@ -20,7 +20,7 @@ export function ChatInterface({ tradeId }: { tradeId: string }) {
   }, [messages?.length]);
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] flex-col bg-background md:h-[calc(100vh-4rem)]">
+    <div className="flex min-h-0 flex-1 flex-col bg-background">
       <div className="flex-1 overflow-y-auto p-3">
         <div className="flex flex-col gap-3">
           {isLoading && <p className="text-sm text-muted-foreground">Loading messages…</p>}

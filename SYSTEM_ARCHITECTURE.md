@@ -55,10 +55,10 @@ flowchart TB
 - Next.js App Router with two route groups: `(auth)` (login/signup/magic-link, unauthenticated) and
   `(main)` (home dashboard at `/`, cards/inventory/trades/profile, authenticated — enforced by
   `proxy.ts`).
-- `(main)`'s layout is a persistent left `Sidebar` beside a scrolling `<main>` on desktop
-  (`flex md:flex-row`, `Sidebar` is `md:sticky` rather than `fixed` so `<main>` never needs manual
-  margin-syncing), collapsing to a stacked `MobileTopBar` → `<main>` → `MobileNav` bottom-tab shell
-  on mobile — see [UI_COMPONENT_MANIFEST.md](./UI_COMPONENT_MANIFEST.md#navigation-componentsnav).
+- `(main)`'s layout is one universal nav shell at every screen size — no sidebar, no desktop/mobile
+  split: `TopBar` → `<main>` → a floating pill `BottomNav` (Cards elevated into its own glowing
+  button above the pill) — see
+  [UI_COMPONENT_MANIFEST.md](./UI_COMPONENT_MANIFEST.md#navigation-componentsnav).
 - TanStack Query owns client-side data fetching/caching; Supabase's browser client
   (`lib/supabase/client.ts`) is the fetch layer underneath it.
 - Serwist (`app/sw.ts`, wired via `next.config.ts`) precaches the app shell and applies

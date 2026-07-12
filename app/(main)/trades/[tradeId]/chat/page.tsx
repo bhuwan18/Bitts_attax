@@ -9,7 +9,7 @@ export default function TradeChatPage({ params }: { params: Promise<{ tradeId: s
   const { tradeId } = use(params);
 
   return (
-    <div className="mx-auto flex max-w-lg flex-col">
+    <div className="mx-auto flex h-full max-w-lg flex-col">
       <div className="flex items-center gap-3 border-b border-border bg-card px-3 py-3">
         <Link
           href={`/trades/${tradeId}`}
