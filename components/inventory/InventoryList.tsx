@@ -53,7 +53,9 @@ export function InventoryList() {
         </div>
       )}
       {view === "list" ? (
-        <div className="flex flex-col gap-2">
+        // Two columns on tablet+ so rows fill the width instead of leaving a
+        // huge gap between the card name and the quantity stepper.
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
           {items?.map((item) => (
             <InventoryItemRow
               key={item.id}
@@ -73,7 +75,7 @@ export function InventoryList() {
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5">
           {items?.map((item) => (
             <InventoryItemTile
               key={item.id}

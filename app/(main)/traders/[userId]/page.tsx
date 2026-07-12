@@ -41,15 +41,15 @@ export default async function TraderDetailPage({
   const initial = name.charAt(0).toUpperCase();
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-6 p-4 sm:p-6">
+    <div className="mx-auto flex max-w-4xl flex-col gap-6 p-4 sm:p-6">
       <div className="flex items-center gap-4">
         <Avatar className="size-16">
-          <AvatarFallback className="bg-primary font-heading text-2xl font-extrabold text-primary-foreground">
+          <AvatarFallback className="bg-primary font-heading text-2xl text-primary-foreground">
             {initial}
           </AvatarFallback>
         </Avatar>
         <div>
-          <h1 className="font-heading text-2xl font-extrabold tracking-tight">{name}</h1>
+          <h1 className="font-heading text-2xl tracking-tight">{name}</h1>
           <p className="text-sm text-muted-foreground">@{profile.username}</p>
         </div>
       </div>
@@ -62,12 +62,12 @@ export default async function TraderDetailPage({
       />
 
       <div className="flex flex-col gap-2">
-        <h2 className="font-heading text-lg font-bold tracking-tight">Haves</h2>
+        <h2 className="font-heading text-lg tracking-tight">Haves</h2>
         <TraderInventoryGrid items={items} />
       </div>
 
       <div className="flex flex-col gap-2">
-        <h2 className="font-heading text-lg font-bold tracking-tight">Wants</h2>
+        <h2 className="font-heading text-lg tracking-tight">Wants</h2>
         <TraderWantList items={wantItems} />
       </div>
 

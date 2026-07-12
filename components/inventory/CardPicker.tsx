@@ -20,7 +20,9 @@ export function CardPicker({
   const { data: cards, isLoading } = useCards({ search: search || undefined });
 
   return (
-    <div className="flex flex-col gap-2">
+    // Capped to a control width — a search box + results dropdown shouldn't
+    // stretch across the full card gallery on a wide (iPad/desktop) screen.
+    <div className="flex max-w-xl flex-col gap-2">
       <div className="relative">
         <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
