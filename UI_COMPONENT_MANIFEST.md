@@ -44,7 +44,7 @@ user-uploaded hero image with a "Your photo" badge).
 
 | Component | Purpose |
 |---|---|
-| `CardPicker.tsx` | Shared search-and-add widget (used by both the Haves and Wants add flows). Explicit submit — nothing is fetched until the user presses Search (or Enter), rather than re-querying on every keystroke — and matches render as a selectable card grid with a `+` button per tile |
+| `CardPicker.tsx` | Shared search-and-add widget (used by both the Haves and Wants add flows). Explicit submit — nothing is fetched until the user presses Search (or Enter), rather than re-querying on every keystroke — and matches render as a selectable card grid with a `+` button per tile. Optional `addedCardIds` marks results already in the target list: the tile dims and its `+` is replaced by an "Added" marker. The Wants flow passes the user's want list (a card can only be wanted once); the Haves flow leaves it unset, since re-adding a Have is a legitimate quantity bump |
 | `InventoryItemRow.tsx` | One owned card (list view): image, name, team, quantity input, remove button; shows a "Your photo" badge when `custom_image_url` is set |
 | `InventoryItemTile.tsx` | One owned card (grid view), same data as `InventoryItemRow.tsx` in a tile layout, now with the same rarity border+glow treatment as `CardTile.tsx` |
 | `InventoryList.tsx` | Haves tab: `CardPicker` + list/grid of items (`InventoryViewToggle`), wired to `lib/queries/inventory.ts` mutations |

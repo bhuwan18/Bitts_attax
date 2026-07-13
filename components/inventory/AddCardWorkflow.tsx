@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CardPicker } from "@/components/inventory/CardPicker";
 import { ScanAddTab } from "@/components/inventory/ScanAddTab";
-import { useAddToInventory, useAddWantItem } from "@/lib/queries/inventory";
+import { useAddToInventory, useAddWantItem, useWantList } from "@/lib/queries/inventory";
 
 export type AddTab = "search" | "scan";
 
@@ -25,6 +25,15 @@ export function AddCardWorkflow({
   const [tab, setTab] = useState<AddTab>(initialTab);
   const addMutation = useAddToInventory();
   const addWantMutation = useAddWantItem();
+  const { data: wantItems } = useWantList();
+  // Cards added this session are tracked locally so a tile flips to "Added" on
+  // click, rather than after the want-list refetch that invalidation kicks off.
+  const [addedThisSession, setAddedThisSession] = useState<string[]>([]);
+  const wantedCardIds = useMemo(() => {
+    const ids = new Set(addedThisSession);
+    for (const item of wantItems ?? []) ids.add(item.card.id);
+    return ids;
+  }, [wantItems, addedThisSession]);
 
   // Scanning identifies a card you're physically holding, which only makes
   // sense for a Have — so the Wants flow is the search picker on its own.
@@ -33,12 +42,17 @@ export function AddCardWorkflow({
       <CardPicker
         addLabel="Add to Wants"
         isAdding={addWantMutation.isPending}
-        onAdd={(cardId) =>
+        addedCardIds={wantedCardIds}
+        onAdd={(cardId) => {
+          setAddedThisSession((ids) => [...ids, cardId]);
           addWantMutation.mutate(cardId, {
             onSuccess: () => toast.success("Added to your want list."),
-            onError: (error) => toast.error(error.message),
-          })
-        }
+            onError: (error) => {
+              setAddedThisSession((ids) => ids.filter((id) => id !== cardId));
+              toast.error(error.message);
+            },
+          });
+        }}
       />
     );
   }
