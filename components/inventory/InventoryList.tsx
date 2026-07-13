@@ -1,15 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
-import { PackageOpen } from "lucide-react";
-import { CardPicker } from "@/components/inventory/CardPicker";
-import { ScanCardDialog } from "@/components/inventory/ScanCardDialog";
+import { PackageOpen, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { InventoryItemRow } from "@/components/inventory/InventoryItemRow";
 import { InventoryItemTile } from "@/components/inventory/InventoryItemTile";
 import { InventoryViewToggle, type InventoryView } from "@/components/inventory/InventoryViewToggle";
 import {
-  useAddToInventory,
   useInventory,
   useRemoveInventoryItem,
   useUpdateInventoryQuantity,
@@ -18,27 +17,17 @@ import {
 export function InventoryList() {
   const [view, setView] = useState<InventoryView>("grid");
   const { data: items, isLoading } = useInventory();
-  const addMutation = useAddToInventory();
   const updateMutation = useUpdateInventoryQuantity();
   const removeMutation = useRemoveInventoryItem();
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
-        <CardPicker
-          addLabel="Add to Haves"
-          isAdding={addMutation.isPending}
-          onAdd={(cardId) =>
-            addMutation.mutate(
-              { cardId },
-              {
-                onError: (error) => toast.error(error.message),
-              }
-            )
-          }
-        />
-        <ScanCardDialog />
-      </div>
+      <Link href="/inventory/add">
+        <Button type="button" variant="outline" className="w-full sm:w-auto">
+          <Plus className="size-4" />
+          Add a card
+        </Button>
+      </Link>
       {isLoading && <p className="text-sm text-muted-foreground">Loading your collection…</p>}
       {!isLoading && items?.length === 0 && (
         <div className="flex flex-col items-center gap-2 rounded-xl bg-muted/60 py-10 text-center">
