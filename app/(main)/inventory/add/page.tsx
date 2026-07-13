@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { AddCardWorkflow, type AddCardList } from "@/components/inventory/AddCardWorkflow";
+import {
+  AddCardWorkflow,
+  type AddCardList,
+  type AddTab,
+} from "@/components/inventory/AddCardWorkflow";
 
 export const metadata = {
   title: "Add a Card — Bitts Attax",
@@ -9,10 +13,11 @@ export const metadata = {
 export default async function AddCardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ list?: string }>;
+  searchParams: Promise<{ list?: string; tab?: string }>;
 }) {
-  const { list } = await searchParams;
+  const { list, tab } = await searchParams;
   const target: AddCardList = list === "wants" ? "wants" : "haves";
+  const initialTab: AddTab = tab === "scan" ? "scan" : "search";
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-4 p-4 sm:p-6">
@@ -33,7 +38,7 @@ export default async function AddCardPage({
             : "Search the catalog by name, or scan a photo of your physical card."}
         </p>
       </div>
-      <AddCardWorkflow list={target} />
+      <AddCardWorkflow list={target} initialTab={initialTab} />
     </div>
   );
 }

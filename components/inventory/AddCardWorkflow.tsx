@@ -7,12 +7,22 @@ import { CardPicker } from "@/components/inventory/CardPicker";
 import { ScanAddTab } from "@/components/inventory/ScanAddTab";
 import { useAddToInventory, useAddWantItem } from "@/lib/queries/inventory";
 
-type AddTab = "search" | "scan";
+export type AddTab = "search" | "scan";
 
 export type AddCardList = "haves" | "wants";
 
-export function AddCardWorkflow({ list = "haves" }: { list?: AddCardList }) {
-  const [tab, setTab] = useState<AddTab>("search");
+// initialTab lets a caller deep-link straight into the scanner (/inventory/add
+// ?tab=scan) — the home page's hero CTA does exactly that. It only seeds the
+// initial state; the tabs are still freely switchable after that, and the URL
+// deliberately doesn't track subsequent switches.
+export function AddCardWorkflow({
+  list = "haves",
+  initialTab = "search",
+}: {
+  list?: AddCardList;
+  initialTab?: AddTab;
+}) {
+  const [tab, setTab] = useState<AddTab>(initialTab);
   const addMutation = useAddToInventory();
   const addWantMutation = useAddWantItem();
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { firstNameOf } from "@/lib/profile/name";
 import { useCurrentProfile } from "@/lib/queries/auth";
 
 // The greeting name is read client-side rather than in app/(main)/page.tsx on
@@ -8,7 +9,7 @@ import { useCurrentProfile } from "@/lib/queries/auth";
 // TanStack cache and the name paints on the first frame of the tab switch.
 export function HomeGreeting() {
   const { data: profile } = useCurrentProfile();
-  const name = profile?.display_name ?? profile?.username;
+  const name = firstNameOf(profile);
 
   return (
     <div className="animate-in fade-in-0 slide-in-from-bottom-4 animation-duration-500 px-4 pt-6 sm:px-6">

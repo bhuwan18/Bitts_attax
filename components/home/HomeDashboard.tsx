@@ -1,6 +1,7 @@
 "use client";
 
 import { StatStrip } from "@/components/shared/StatStrip";
+import { HeroCta } from "@/components/home/HeroCta";
 import { StreakBanner } from "@/components/home/StreakBanner";
 import { RecentCardsRail } from "@/components/home/RecentCardsRail";
 import { TradeMatchesWidget } from "@/components/home/TradeMatchesWidget";
@@ -16,6 +17,7 @@ export function HomeDashboard() {
 
   return (
     <div className="flex flex-col gap-7 p-4 sm:p-6">
+      <HeroCta />
       <StatStrip
         size="lg"
         items={[
