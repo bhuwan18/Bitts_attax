@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
 import { useCurrentUser } from "@/lib/queries/auth";
+import { CARD_WITH_ESTIMATE_SELECT, withEffectiveOvrOnItems } from "@/lib/queries/cardsShared";
 import type { Card, Profile, Trade, TradeListing } from "@/lib/types/database.types";
 
 export interface TradeListingWithDetails extends TradeListing {
@@ -19,13 +20,13 @@ export function useTradeListings() {
       const { data, error } = await supabase
         .from("trade_listings")
         .select(
-          "*, owner:profiles(id, username, display_name), items:trade_listing_items(side, quantity, card:cards(*))"
+          `*, owner:profiles(id, username, display_name), items:trade_listing_items(side, quantity, card:cards(${CARD_WITH_ESTIMATE_SELECT}))`
         )
         .eq("status", "open")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return (data ?? []) as unknown as TradeListingWithDetails[];
+      return withEffectiveOvrOnItems((data ?? []) as unknown as TradeListingWithDetails[]);
     },
   });
 }
@@ -126,13 +127,14 @@ export function useTrade(tradeId: string) {
       const { data, error } = await supabase
         .from("trades")
         .select(
-          "*, initiator:profiles!trades_initiator_id_fkey(id, username, display_name), counterparty:profiles!trades_counterparty_id_fkey(id, username, display_name), items:trade_items(offered_by, quantity, card:cards(*))"
+          `*, initiator:profiles!trades_initiator_id_fkey(id, username, display_name), counterparty:profiles!trades_counterparty_id_fkey(id, username, display_name), items:trade_items(offered_by, quantity, card:cards(${CARD_WITH_ESTIMATE_SELECT}))`
         )
         .eq("id", tradeId)
         .single();
 
       if (error) throw error;
-      const [trade] = await attachAvailability(supabase, [data as unknown as TradeWithDetails]);
+      const [withOvr] = withEffectiveOvrOnItems([data as unknown as TradeWithDetails]);
+      const [trade] = await attachAvailability(supabase, [withOvr]);
       return trade;
     },
     enabled: !!tradeId,
@@ -149,13 +151,16 @@ export function useMyTrades() {
       const { data, error } = await supabase
         .from("trades")
         .select(
-          "*, initiator:profiles!trades_initiator_id_fkey(id, username, display_name), counterparty:profiles!trades_counterparty_id_fkey(id, username, display_name), items:trade_items(offered_by, quantity, card:cards(*))"
+          `*, initiator:profiles!trades_initiator_id_fkey(id, username, display_name), counterparty:profiles!trades_counterparty_id_fkey(id, username, display_name), items:trade_items(offered_by, quantity, card:cards(${CARD_WITH_ESTIMATE_SELECT}))`
         )
         .or(`initiator_id.eq.${user!.id},counterparty_id.eq.${user!.id}`)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return attachAvailability(supabase, (data ?? []) as unknown as TradeWithDetails[]);
+      return attachAvailability(
+        supabase,
+        withEffectiveOvrOnItems((data ?? []) as unknown as TradeWithDetails[])
+      );
     },
     enabled: !!user,
   });

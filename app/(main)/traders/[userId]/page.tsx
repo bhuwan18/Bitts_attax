@@ -7,6 +7,11 @@ import { TraderWantList } from "@/components/traders/TraderWantList";
 import { ProposeTradeForm } from "@/components/traders/ProposeTradeForm";
 import { TradeDraftProvider } from "@/components/traders/TradeDraftProvider";
 import { TradeDraftBar } from "@/components/traders/TradeDraftBar";
+import {
+  CARD_WITH_ESTIMATE_SELECT,
+  withEffectiveOvr,
+  type CardWithEstimate,
+} from "@/lib/queries/cardsShared";
 import type { TraderInventoryItem, TraderWantItem } from "@/lib/queries/traders";
 
 export default async function TraderDetailPage({
@@ -27,18 +32,22 @@ export default async function TraderDetailPage({
 
   const { data: inventory } = await supabase
     .from("inventory_items")
-    .select("id, quantity, custom_image_url, card:cards(*)")
+    .select(`id, quantity, custom_image_url, card:cards(${CARD_WITH_ESTIMATE_SELECT})`)
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
   const { data: wants } = await supabase
     .from("want_items")
-    .select("id, priority, card:cards(*)")
+    .select(`id, priority, card:cards(${CARD_WITH_ESTIMATE_SELECT})`)
     .eq("user_id", userId)
     .order("priority", { ascending: false });
 
-  const items = (inventory ?? []) as unknown as TraderInventoryItem[];
-  const wantItems = (wants ?? []) as unknown as TraderWantItem[];
+  const items = ((inventory ?? []) as unknown as Array<
+    Omit<TraderInventoryItem, "card"> & { card: CardWithEstimate }
+  >).map((item) => ({ ...item, card: withEffectiveOvr(item.card) }));
+  const wantItems = ((wants ?? []) as unknown as Array<
+    Omit<TraderWantItem, "card"> & { card: CardWithEstimate }
+  >).map((item) => ({ ...item, card: withEffectiveOvr(item.card) }));
   const name = profile.display_name ?? profile.username;
   const initial = name.charAt(0).toUpperCase();
 

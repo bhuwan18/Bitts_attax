@@ -15,6 +15,12 @@ export type Rarity =
 // Mirrors the `profiles.role` check constraint in supabase/migrations/0007_admin_role.sql.
 export type UserRole = "user" | "admin"
 
+// Mirrors the `card_ovr_estimates.source` / `.confidence` check constraints in
+// supabase/migrations/0018_card_ovr_estimates.sql. 'image' = the rating was
+// read off the printed card face; 'knowledge' = inferred from the player.
+export type OvrSource = "image" | "knowledge"
+export type OvrConfidence = "high" | "medium" | "low"
+
 // Mirrors the `notifications.type` check constraint in
 // supabase/migrations/0009_user_discovery_and_notifications.sql.
 export type NotificationType =
@@ -106,6 +112,58 @@ export type Database = {
           {
             foreignKeyName: "activity_log_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      // Hand-added ahead of `supabase gen types` regeneration — defined in
+      // supabase/migrations/0018_card_ovr_estimates.sql, not yet applied.
+      card_ovr_estimates: {
+        Row: {
+          card_id: string
+          confidence: OvrConfidence
+          created_at: string
+          created_by: string | null
+          id: string
+          model: string
+          ovr_rating: number
+          source: OvrSource
+        }
+        Insert: {
+          card_id: string
+          confidence: OvrConfidence
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          model: string
+          ovr_rating: number
+          source: OvrSource
+        }
+        Update: {
+          card_id?: string
+          confidence?: OvrConfidence
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          model?: string
+          ovr_rating?: number
+          source?: OvrSource
+        }
+        Relationships: [
+          {
+            foreignKeyName: "card_ovr_estimates_card_id_fkey"
+            columns: ["card_id"]
+            // unique (card_id) — one estimate per card, so PostgREST embeds it
+            // as an object rather than an array.
+            isOneToOne: true
+            referencedRelation: "cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "card_ovr_estimates_created_by_fkey"
+            columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -645,7 +703,35 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      // Hand-added ahead of `supabase gen types` regeneration — defined in
+      // supabase/migrations/0018_card_ovr_estimates.sql, not yet applied.
+      //
+      // Column-for-column identical to `cards`, with ovr_rating coalesced onto
+      // card_ovr_estimates. Read sites that want the LLM-filled rating select
+      // from here instead of `cards` and change nothing else. ovr_rating is
+      // still nullable: a card with neither a catalog rating nor an estimate
+      // has no rating at all.
+      cards_effective: {
+        Row: {
+          attributes: Json
+          base_price: number | null
+          created_at: string
+          external_ref: string | null
+          id: string
+          image_url: string | null
+          name: string
+          ovr_rating: number | null
+          owned_count: number
+          position: string | null
+          rarity: Rarity
+          season: string | null
+          set_name: string | null
+          source: string
+          team: string | null
+          updated_at: string
+        }
+        Relationships: []
+      }
     }
     Functions: {
       show_limit: { Args: never; Returns: number }
@@ -662,6 +748,9 @@ export type Database = {
       }
       // Hand-added ahead of `supabase gen types` regeneration — defined in
       // supabase/migrations/0017_match_cards_by_text.sql, not yet applied.
+      // Redefined in 0018 to return `setof cards_effective` rather than
+      // `setof cards`, so a scanned card carries its LLM-estimated ovr_rating.
+      // The two row types are column-identical, so this shape is unchanged.
       match_cards_by_text: {
         Args: {
           p_name: string

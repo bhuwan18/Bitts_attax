@@ -2,37 +2,35 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Trash2, Heart } from "lucide-react";
+import Link from "next/link";
+import { Trash2, Heart, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { CardPicker } from "@/components/inventory/CardPicker";
 import { WantItemTile } from "@/components/inventory/WantItemTile";
 import { InventoryViewToggle, type InventoryView } from "@/components/inventory/InventoryViewToggle";
-import { useAddWantItem, useRemoveWantItem, useWantList } from "@/lib/queries/inventory";
+import { useRemoveWantItem, useWantList } from "@/lib/queries/inventory";
 
 export function WantListEditor() {
-  const [view, setView] = useState<InventoryView>("list");
+  const [view, setView] = useState<InventoryView>("grid");
   const { data: items, isLoading } = useWantList();
-  const addMutation = useAddWantItem();
   const removeMutation = useRemoveWantItem();
 
   return (
     <div className="flex flex-col gap-4">
-      <CardPicker
-        addLabel="Add to Wants"
-        isAdding={addMutation.isPending}
-        onAdd={(cardId) =>
-          addMutation.mutate(cardId, {
-            onError: (error) => toast.error(error.message),
-          })
-        }
-      />
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <Link href="/inventory/add?list=wants">
+          <Button type="button" variant="outline" className="w-full sm:w-auto">
+            <Plus className="size-4" />
+            Add a card
+          </Button>
+        </Link>
+      </div>
       {isLoading && <p className="text-sm text-muted-foreground">Loading your want list…</p>}
       {!isLoading && items?.length === 0 && (
         <div className="flex flex-col items-center gap-2 rounded-xl bg-muted/60 py-10 text-center">
           <Heart className="size-7 text-muted-foreground/60" />
           <p className="text-sm text-muted-foreground">
-            Your want list is empty — search above for cards you&apos;re chasing.
+            Your want list is empty — add the cards you&apos;re chasing.
           </p>
         </div>
       )}

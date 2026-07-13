@@ -3,6 +3,7 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
 import {
+  CARDS_EFFECTIVE_RELATION,
   cardsInfiniteQueryKey,
   fetchCardsPage,
   getNextCardsPageParam,
@@ -20,7 +21,10 @@ export function useCards(filters: CardFilters = {}, options: { enabled?: boolean
     enabled: options.enabled ?? true,
     queryKey: ["cards", filters],
     queryFn: async (): Promise<Card[]> => {
-      let query = supabase.from("cards").select("*").order("ovr_rating", { ascending: false });
+      let query = supabase
+        .from(CARDS_EFFECTIVE_RELATION)
+        .select("*")
+        .order("ovr_rating", { ascending: false });
 
       if (filters.search) {
         query = query.ilike("name", `%${filters.search}%`);
@@ -57,7 +61,7 @@ export function useMostOwnedCards(limit = 10) {
     queryKey: ["cards", "most-owned", limit],
     queryFn: async (): Promise<CardListItem[]> => {
       const { data, error } = await supabase
-        .from("cards")
+        .from(CARDS_EFFECTIVE_RELATION)
         .select("id, name, team, rarity, ovr_rating, base_price, image_url, set_name")
         .order("owned_count", { ascending: false })
         .order("created_at", { ascending: false })
@@ -74,7 +78,11 @@ export function useCard(cardId: string) {
   return useQuery({
     queryKey: ["card", cardId],
     queryFn: async (): Promise<Card | null> => {
-      const { data, error } = await supabase.from("cards").select("*").eq("id", cardId).single();
+      const { data, error } = await supabase
+        .from(CARDS_EFFECTIVE_RELATION)
+        .select("*")
+        .eq("id", cardId)
+        .single();
       if (error) throw error;
       return data;
     },

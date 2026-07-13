@@ -11,6 +11,59 @@ export interface CardFilters {
 
 export const CARDS_PAGE_SIZE = 30;
 
+// Much of the catalog has no ovr_rating (incomplete source data), so ratings
+// are filled in by LLM and stored in the shared card_ovr_estimates table —
+// see supabase/migrations/0018_card_ovr_estimates.sql. There are two ways to
+// read that filled-in value, and which one applies depends on how you reach
+// the card:
+//
+//   * Selecting cards directly -> read from the `cards_effective` view, which
+//     is `cards` with ovr_rating already coalesced onto the estimate. Nothing
+//     else changes, and `order by ovr_rating` sorts estimated cards into their
+//     true position instead of the NULL tail.
+//
+//   * Reaching cards through an embed (inventory_items -> cards, trade_items ->
+//     cards, ...) -> the view is not usable, because PostgREST resolves embeds
+//     through foreign keys and those FKs point at `cards`, not at a view. So
+//     embed the estimate as a child of the card instead and coalesce it here in
+//     TS, which produces the same shape.
+//
+// Both paths end with a plain `Card` whose ovr_rating is the effective one, so
+// no component needs to know an estimate was involved.
+export const CARDS_EFFECTIVE_RELATION = "cards_effective";
+
+export const CARD_WITH_ESTIMATE_SELECT = "*, ovr_estimate:card_ovr_estimates(ovr_rating)";
+
+export type CardWithEstimate = Card & {
+  ovr_estimate: { ovr_rating: number } | null;
+};
+
+// Folds an embedded estimate into ovr_rating and drops it, so callers get a
+// plain Card back. The canonical rating always wins — an estimate only ever
+// exists where the catalog had none (enforced by the insert policy in 0018),
+// but coalescing in this order means even a stale one can't override real data.
+export function withEffectiveOvr(card: CardWithEstimate): Card {
+  const { ovr_estimate, ...rest } = card;
+  return { ...rest, ovr_rating: rest.ovr_rating ?? ovr_estimate?.ovr_rating ?? null };
+}
+
+// Same, one level deeper, for the `items: [{ card }]` embeds (trades,
+// trade_listings). Loosely typed on purpose: postgrest-js can't infer these
+// nested embeds either, so every one of these call sites already casts its
+// result through `unknown` — a precise generic here would buy nothing but
+// noise.
+export function withEffectiveOvrOnItems<T extends { items: Array<{ card: unknown }> }>(
+  rows: T[]
+): T[] {
+  return rows.map((row) => ({
+    ...row,
+    items: row.items.map((item) => ({
+      ...item,
+      card: withEffectiveOvr(item.card as CardWithEstimate),
+    })),
+  })) as T[];
+}
+
 export type CardListItem = Pick<
   Card,
   "id" | "name" | "team" | "rarity" | "ovr_rating" | "base_price" | "image_url" | "set_name"
@@ -29,7 +82,10 @@ export async function fetchCardsPage(
   pageParam: number
 ): Promise<CardListItem[]> {
   let query = supabase
-    .from("cards")
+    // The view, not the table: an LLM-estimated rating has to sort like a real
+    // one, or the cards this feature just rated would still pile up in the NULL
+    // tail at the bottom of the catalog.
+    .from(CARDS_EFFECTIVE_RELATION)
     .select("id, name, team, rarity, ovr_rating, base_price, image_url, set_name")
     // ovr_rating first (primary sort), then global ownership (owned_count,
     // sum of inventory_items.quantity across all users — see migration

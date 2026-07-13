@@ -117,6 +117,59 @@ RPC functions: `cards_distinct_teams()`, `cards_distinct_set_names()` — return
 non-null values of those free-text columns, used to populate the `/cards` filter panel's Team and
 Set dropdowns (`postgrest-js` has no `DISTINCT` support in its query builder).
 
+### `card_ovr_estimates` (`0018_card_ovr_estimates.sql`)
+LLM-generated `ovr_rating`s for catalog cards whose source data didn't carry one — a large share of
+the catalog. A missing rating isn't cosmetic: `computeFairnessScore` weights OVR, and the fairness
+action used to coerce a null to `0`, so an unrated card was scored as **worthless** in a trade.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | `uuid` PK | |
+| `card_id` | `uuid` FK → `cards` | **unique** — one estimate per card, which is what makes this a shared cache rather than per-user scratch |
+| `ovr_rating` | `smallint` | not null, check 0–99 |
+| `source` | `text` | check `image, knowledge`. `image` = transcribed off the printed card face (Match Attax cards print the OVR, so this is reading, not guessing); `knowledge` = inferred from the player when no usable image existed |
+| `confidence` | `text` | check `high, medium, low`. `high` is reserved for a legibly-printed number — `normalizeOvrEstimate` caps a `knowledge` estimate at `medium` even if the model claims otherwise |
+| `model` | `text` | which model produced it, so a future upgrade can find and re-run older estimates |
+| `created_by` | `uuid` FK → `profiles` | `on delete set null` — the estimate outlives the user who triggered it |
+| `created_at` | `timestamptz` | |
+
+`cards` stays service-role-write-only; this does **not** add a client write path to it. Estimates
+live here and are folded onto the canonical value at *read* time by the `cards_effective` view
+below. That keeps re-seeding safe (an ingest upsert of `cards` can't clobber an estimate) and keeps
+"what the source actually said" (`null`) distinct from "what an LLM guessed" — both of which a
+write-back into `cards.ovr_rating` would destroy.
+
+Written by `lib/cards/ovrResolver.ts`, from exactly one trigger: a trade's fairness being scored
+(`fairness-actions.ts`). A card is rated when — and only when — it's actually put into a trade, which
+is the one moment a missing rating would otherwise corrupt a score. Because the cache is shared and
+keyed by card, the Gemini call happens **once per card across the whole app** — the second trade
+involving that card is a cache hit. A bulk "rate my whole collection" path was deliberately rejected:
+it spends LLM calls on cards nobody is trading.
+
+### `cards_effective` (view, `0018_card_ovr_estimates.sql`)
+`cards` column-for-column, except `ovr_rating` is `coalesce(cards.ovr_rating,
+card_ovr_estimates.ovr_rating)`. Identical on purpose: a read site swaps `.from("cards")` →
+`.from("cards_effective")` and changes nothing else, because the column it already reads simply
+stops being null. It also makes `order by ovr_rating desc` sort an estimated card into its true
+position instead of dumping it in the null tail at the bottom of `/cards`.
+
+`security_invoker = on`, so the RLS on `cards` and `card_ovr_estimates` still applies through it
+(without it the view would run as its owner and silently bypass both). Requires PG 15+.
+
+Two caveats:
+- **Embeds can't use it.** PostgREST resolves embeds through foreign keys, and
+  `inventory_items`/`trade_items` FKs point at `cards`, not at a view. Those sites instead embed the
+  estimate as a child (`card:cards(*, ovr_estimate:card_ovr_estimates(ovr_rating))`) and coalesce in
+  TS via `withEffectiveOvr()` (`lib/queries/cardsShared.ts`), which yields the same shape.
+- **Ordering by the coalesced value can't use the `(ovr_rating, owned_count, id)` indexes** from
+  `0016`, so the catalog sort becomes a join + sort. Fine at this catalog's size (thousands of
+  cards); revisit if it grows by orders of magnitude.
+
+`match_cards_by_text()` (`0017`) is redefined in `0018` to return `setof cards_effective` rather
+than `setof cards`, so a photo-scanned card shows the same rating the catalog does — otherwise the
+scan dialog would be the one place still rendering a blank OVR, and it's the likeliest place to meet
+an unrated card.
+
 ### `inventory_items` ("Haves")
 | Column | Type | Notes |
 |---|---|---|
@@ -339,6 +392,7 @@ Every table has RLS enabled. Summary (full policies in `0002_rls_policies.sql`):
 |---|---|
 | `profiles` | select: public; insert/update: `auth.uid() = id` only |
 | `cards` | select: public; writes: service-role only (no client policy — bypassed by the seeder's service key) |
+| `card_ovr_estimates` | select: public (an estimate is only useful if it fills the gap for *everyone* who sees the card — including both sides of a trade's fairness score); insert: `authenticated`, and only where `created_by = auth.uid()` **and the card genuinely has no canonical `ovr_rating`** (`exists (select 1 from cards c where c.id = card_id and c.ovr_rating is null)`) — so a user can fill a gap but never overwrite real catalog data; **no update/delete policy** — an estimate is immutable once stored, and revising one is a service-role/admin operation. The writer upserts with `on conflict do nothing`, which needs no update policy and makes the "two users trade the same unrated card at once" race harmless |
 | `inventory_items` | full CRUD only where `auth.uid() = user_id`; **plus** select for admins (`profiles.role = 'admin'`); **plus** select: public (`0009`, for the Traders discovery view — writes are still owner-only) |
 | `want_items` | full CRUD only where `auth.uid() = user_id`; **plus** select for admins; **plus** select: public (`0010`, shown on a trader's public profile — writes are still owner-only) |
 | `trade_listings` | select: public; insert/update/delete: owner only |

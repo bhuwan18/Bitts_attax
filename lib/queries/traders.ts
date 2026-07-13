@@ -3,6 +3,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
 import { useCurrentUser } from "@/lib/queries/auth";
+import {
+  CARD_WITH_ESTIMATE_SELECT,
+  withEffectiveOvr,
+  type CardWithEstimate,
+} from "@/lib/queries/cardsShared";
 import type { Card, Profile } from "@/lib/types/database.types";
 
 export interface TraderInventoryItem {
@@ -95,11 +100,13 @@ export function useTraderInventory(userId: string) {
     queryFn: async (): Promise<TraderInventoryItem[]> => {
       const { data, error } = await supabase
         .from("inventory_items")
-        .select("id, quantity, custom_image_url, card:cards(*)")
+        .select(`id, quantity, custom_image_url, card:cards(${CARD_WITH_ESTIMATE_SELECT})`)
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as unknown as TraderInventoryItem[];
+      return ((data ?? []) as unknown as Array<
+        Omit<TraderInventoryItem, "card"> & { card: CardWithEstimate }
+      >).map((item) => ({ ...item, card: withEffectiveOvr(item.card) }));
     },
     enabled: !!userId,
   });
@@ -116,11 +123,13 @@ export function useTraderWantList(userId: string) {
     queryFn: async (): Promise<TraderWantItem[]> => {
       const { data, error } = await supabase
         .from("want_items")
-        .select("id, priority, card:cards(*)")
+        .select(`id, priority, card:cards(${CARD_WITH_ESTIMATE_SELECT})`)
         .eq("user_id", userId)
         .order("priority", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as unknown as TraderWantItem[];
+      return ((data ?? []) as unknown as Array<
+        Omit<TraderWantItem, "card"> & { card: CardWithEstimate }
+      >).map((item) => ({ ...item, card: withEffectiveOvr(item.card) }));
     },
     enabled: !!userId,
   });

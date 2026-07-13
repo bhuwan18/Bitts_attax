@@ -10,6 +10,11 @@ import {
   removeWantItem,
   updateInventoryQuantity,
 } from "@/app/(main)/inventory/actions";
+import {
+  CARD_WITH_ESTIMATE_SELECT,
+  withEffectiveOvr,
+  type CardWithEstimate,
+} from "@/lib/queries/cardsShared";
 import type { Card } from "@/lib/types/database.types";
 
 export interface InventoryItemWithCard {
@@ -35,11 +40,13 @@ export function useInventory() {
     queryFn: async (): Promise<InventoryItemWithCard[]> => {
       const { data, error } = await supabase
         .from("inventory_items")
-        .select("id, quantity, condition, custom_image_url, card:cards(*)")
+        .select(`id, quantity, condition, custom_image_url, card:cards(${CARD_WITH_ESTIMATE_SELECT})`)
         .eq("user_id", user!.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as unknown as InventoryItemWithCard[];
+      return ((data ?? []) as unknown as Array<
+        Omit<InventoryItemWithCard, "card"> & { card: CardWithEstimate }
+      >).map((item) => ({ ...item, card: withEffectiveOvr(item.card) }));
     },
     enabled: !!user,
   });
@@ -54,11 +61,13 @@ export function useWantList() {
     queryFn: async (): Promise<WantItemWithCard[]> => {
       const { data, error } = await supabase
         .from("want_items")
-        .select("id, priority, card:cards(*)")
+        .select(`id, priority, card:cards(${CARD_WITH_ESTIMATE_SELECT})`)
         .eq("user_id", user!.id)
         .order("priority", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as unknown as WantItemWithCard[];
+      return ((data ?? []) as unknown as Array<
+        Omit<WantItemWithCard, "card"> & { card: CardWithEstimate }
+      >).map((item) => ({ ...item, card: withEffectiveOvr(item.card) }));
     },
     enabled: !!user,
   });

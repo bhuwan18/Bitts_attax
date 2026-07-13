@@ -11,7 +11,9 @@ import {
   FOIL_RARITIES,
 } from "@/lib/cards/rarity";
 import { createClient } from "@/lib/supabase/server";
+import { CARDS_EFFECTIVE_RELATION } from "@/lib/queries/cardsShared";
 import { AddToInventoryDialog } from "@/components/cards/AddToInventoryDialog";
+import { WantListButton } from "@/components/cards/WantListButton";
 import { Badge } from "@/components/ui/badge";
 import { StatStrip } from "@/components/shared/StatStrip";
 
@@ -22,7 +24,13 @@ export default async function CardDetailPage({
 }) {
   const { cardId } = await params;
   const supabase = await createClient();
-  const { data: card } = await supabase.from("cards").select("*").eq("id", cardId).single();
+  // cards_effective, not cards: same columns, but ovr_rating is coalesced onto
+  // the LLM estimate so an unrated card still shows a rating here.
+  const { data: card } = await supabase
+    .from(CARDS_EFFECTIVE_RELATION)
+    .select("*")
+    .eq("id", cardId)
+    .single();
 
   if (!card) notFound();
 
@@ -30,14 +38,22 @@ export default async function CardDetailPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: existingItem } = user
-    ? await supabase
-        .from("inventory_items")
-        .select("id, quantity, custom_image_url")
-        .eq("card_id", cardId)
-        .eq("user_id", user.id)
-        .maybeSingle()
-    : { data: null };
+  const [{ data: existingItem }, { data: wantItem }] = user
+    ? await Promise.all([
+        supabase
+          .from("inventory_items")
+          .select("id, quantity, custom_image_url")
+          .eq("card_id", cardId)
+          .eq("user_id", user.id)
+          .maybeSingle(),
+        supabase
+          .from("want_items")
+          .select("id")
+          .eq("card_id", cardId)
+          .eq("user_id", user.id)
+          .maybeSingle(),
+      ])
+    : [{ data: null }, { data: null }];
 
   const foil = FOIL_RARITIES.has(card.rarity);
   const heroImageUrl = existingItem?.custom_image_url ?? card.image_url;
@@ -119,12 +135,20 @@ export default async function CardDetailPage({
           )}
 
           <div className="flex flex-col gap-2 sm:items-start">
-            <AddToInventoryDialog card={card} existingItem={existingItem} />
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <AddToInventoryDialog card={card} existingItem={existingItem} />
+              <WantListButton
+                cardId={card.id}
+                cardName={card.name}
+                wantItemId={wantItem?.id ?? null}
+              />
+            </div>
             {existingItem && (
               <p className="text-xs text-muted-foreground">
                 In your inventory · qty {existingItem.quantity}
               </p>
             )}
+            {wantItem && <p className="text-xs text-muted-foreground">On your want list</p>}
           </div>
         </div>
       </div>

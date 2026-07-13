@@ -2,6 +2,11 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
+import {
+  CARD_WITH_ESTIMATE_SELECT,
+  withEffectiveOvr,
+  type CardWithEstimate,
+} from "@/lib/queries/cardsShared";
 import type { Card, Profile, Trade } from "@/lib/types/database.types";
 
 type ProfileSummary = Pick<Profile, "id" | "username" | "display_name">;
@@ -80,12 +85,12 @@ export function useAdminUserActivity(userId: string) {
       const [inventoryRes, wantsRes, tradesRes] = await Promise.all([
         supabase
           .from("inventory_items")
-          .select("id, quantity, condition, card:cards(*)")
+          .select(`id, quantity, condition, card:cards(${CARD_WITH_ESTIMATE_SELECT})`)
           .eq("user_id", userId)
           .order("created_at", { ascending: false }),
         supabase
           .from("want_items")
-          .select("id, priority, card:cards(*)")
+          .select(`id, priority, card:cards(${CARD_WITH_ESTIMATE_SELECT})`)
           .eq("user_id", userId)
           .order("priority", { ascending: false }),
         supabase
@@ -100,8 +105,12 @@ export function useAdminUserActivity(userId: string) {
       if (tradesRes.error) throw tradesRes.error;
 
       return {
-        inventory: (inventoryRes.data ?? []) as unknown as AdminInventoryItem[],
-        wants: (wantsRes.data ?? []) as unknown as AdminWantItem[],
+        inventory: ((inventoryRes.data ?? []) as unknown as Array<
+          Omit<AdminInventoryItem, "card"> & { card: CardWithEstimate }
+        >).map((item) => ({ ...item, card: withEffectiveOvr(item.card) })),
+        wants: ((wantsRes.data ?? []) as unknown as Array<
+          Omit<AdminWantItem, "card"> & { card: CardWithEstimate }
+        >).map((item) => ({ ...item, card: withEffectiveOvr(item.card) })),
         trades: (tradesRes.data ?? []) as unknown as AdminTradeSummary[],
       };
     },

@@ -32,17 +32,19 @@ prefix-based list, since every pathname starts with `/`.
 | `CardGrid.tsx` | Responsive grid (2/3/4/5 columns by breakpoint) with loading skeletons (`CardGridSkeleton`) and empty state |
 | `CardTile.tsx` | Single card preview: gradient image frame with a rarity-colored border + glow (`RARITY_BORDER_CLASS`/`RARITY_GLOW_CLASS`, `lib/cards/rarity.ts`), OVR badge, name, team, rarity chip, price |
 | `AddToInventoryDialog.tsx` | Confirmation dialog for adding the current card to the user's Haves; lets the user attach their own photo (file picker or device camera via `capture="environment"`) instead of the stock `cards.image_url` before confirming, via `useAddToInventory()`. Relabels to "Edit in Inventory" and pre-fills quantity/photo when the card is already owned. |
+| `WantListButton.tsx` | One-click toggle that adds the current card to the user's Wants (`useAddWantItem()`) or removes it (`useRemoveWantItem()`), sitting next to `AddToInventoryDialog` on the detail page. Calls `router.refresh()` after a mutation because the `want_items` actions only `revalidatePath("/inventory")`. |
 
 Used by: `app/(main)/cards/page.tsx` (browse — server-rendered, prefetches the first page and
 hydrates `CardSearch`'s TanStack Query cache), `app/(main)/cards/[cardId]/page.tsx` (detail,
-server-rendered — also loads the caller's own `inventory_items` row for this card, if any, to
-render `AddToInventoryDialog` and tag a user-uploaded hero image with a "Your photo" badge).
+server-rendered — also loads the caller's own `inventory_items` and `want_items` rows for this card,
+if any, to render `AddToInventoryDialog`/`WantListButton` in their correct state and tag a
+user-uploaded hero image with a "Your photo" badge).
 
 ## Inventory (`components/inventory/`)
 
 | Component | Purpose |
 |---|---|
-| `CardPicker.tsx` | Shared search-and-add widget (used by both Haves and Wants tabs) |
+| `CardPicker.tsx` | Shared search-and-add widget (used by both the Haves and Wants add flows). Explicit submit — nothing is fetched until the user presses Search (or Enter), rather than re-querying on every keystroke — and matches render as a selectable card grid with a `+` button per tile |
 | `InventoryItemRow.tsx` | One owned card (list view): image, name, team, quantity input, remove button; shows a "Your photo" badge when `custom_image_url` is set |
 | `InventoryItemTile.tsx` | One owned card (grid view), same data as `InventoryItemRow.tsx` in a tile layout, now with the same rarity border+glow treatment as `CardTile.tsx` |
 | `InventoryList.tsx` | Haves tab: `CardPicker` + list/grid of items (`InventoryViewToggle`), wired to `lib/queries/inventory.ts` mutations |

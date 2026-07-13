@@ -5,13 +5,33 @@ import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CardPicker } from "@/components/inventory/CardPicker";
 import { ScanAddTab } from "@/components/inventory/ScanAddTab";
-import { useAddToInventory } from "@/lib/queries/inventory";
+import { useAddToInventory, useAddWantItem } from "@/lib/queries/inventory";
 
 type AddTab = "search" | "scan";
 
-export function AddCardWorkflow() {
+export type AddCardList = "haves" | "wants";
+
+export function AddCardWorkflow({ list = "haves" }: { list?: AddCardList }) {
   const [tab, setTab] = useState<AddTab>("search");
   const addMutation = useAddToInventory();
+  const addWantMutation = useAddWantItem();
+
+  // Scanning identifies a card you're physically holding, which only makes
+  // sense for a Have — so the Wants flow is the search picker on its own.
+  if (list === "wants") {
+    return (
+      <CardPicker
+        addLabel="Add to Wants"
+        isAdding={addWantMutation.isPending}
+        onAdd={(cardId) =>
+          addWantMutation.mutate(cardId, {
+            onSuccess: () => toast.success("Added to your want list."),
+            onError: (error) => toast.error(error.message),
+          })
+        }
+      />
+    );
+  }
 
   return (
     <Tabs value={tab} onValueChange={(value) => setTab(value as AddTab)}>

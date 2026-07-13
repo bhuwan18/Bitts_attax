@@ -103,14 +103,41 @@ promises more than the giver has" without any DB writes.
 
 ### `computeAndPersistFairness(tradeId: string): Promise<FairnessResult>`
 1. Loads the trade's `trade_items` joined to `cards` (RLS limits this to trade participants).
-2. Loads the active `fairness_rules` row (`key = 'default'`).
-3. Calls the pure `computeFairnessScore` (`lib/fairness.ts`) — see that file for the formula.
-4. Persists `fairness_score` and `fairness_breakdown` onto the `trades` row.
-5. Returns the full `FairnessResult` for immediate rendering (`components/trades/FairnessMeter.tsx`).
+2. **Generates a missing `ovr_rating` for any card in the trade that the catalog doesn't rate**, via
+   `resolveOvrRatings()` (`lib/cards/ovrResolver.ts`), before scoring.
+3. Loads the active `fairness_rules` row (`key = 'default'`).
+4. Calls the pure `computeFairnessScore` (`lib/fairness.ts`) — see that file for the formula.
+5. Persists `fairness_score` and `fairness_breakdown` onto the `trades` row.
+6. Returns the full `FairnessResult` for immediate rendering (`components/trades/FairnessMeter.tsx`).
 
 Safe to call repeatedly; each call recomputes from the trade's current items and overwrites the
 stored result. The trade detail page calls this automatically the first time it loads a trade with
 no stored `fairness_breakdown`.
+
+Step 2 fixes a real scoring bug rather than adding a nicety. OVR is a weighted term in
+`computeFairnessScore`, and an unrated card used to be coerced to `ovrRating: 0` — i.e. scored as
+contributing nothing — which silently understated whichever side was holding it. Much of the catalog
+has no OVR (incomplete source data), so this was common.
+
+The estimate is cached in the shared `card_ovr_estimates` table, so the Gemini call happens **once
+per card across the whole app**, not once per trade — the next trade involving that card is a cache
+hit. It's also strictly gap-filling: a card the catalog already rates is never sent to the LLM, and
+a canonical rating always wins over an estimate.
+
+**This is the only place LLM ratings are generated, on purpose.** A card is rated when — and only
+when — it's actually put into a trade, i.e. at the one moment a missing rating would otherwise
+corrupt a score. A bulk "rate my whole collection" action was built and then deliberately removed:
+it spends LLM calls on cards nobody is trading, which is unbounded cost for no benefit. Don't
+reintroduce it, in that shape or another.
+
+Image-first: the model reads the OVR printed on the card face (`cards.image_url`, passed by URL —
+Gemini fetches it directly), and only falls back to estimating from the player when the card has no
+art. The two are recorded distinctly as `source: 'image' | 'knowledge'` and never conflated.
+
+**It never blocks the trade.** A Gemini outage, rate limit, or a card the model declines to rate
+leaves that card absent from the resolved map, and it falls back to the previous `?? 0` — so a
+failure here degrades to exactly the behavior the app had before this feature existed, rather than
+failing the trade view.
 
 ```ts
 interface FairnessResult {
