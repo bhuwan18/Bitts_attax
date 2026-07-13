@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { toast } from "sonner";
 import { Camera, Check, ImageUp, Loader2, Search } from "lucide-react";
@@ -14,7 +14,7 @@ import {
   RARITY_LABEL,
   RARITY_STYLE,
 } from "@/lib/cards/rarity";
-import { getAutoCroppedImageFile } from "@/lib/cards/perspectiveCrop";
+import { getAutoCroppedImageFile, warmUpAutoCrop } from "@/lib/cards/perspectiveCrop";
 import { MAX_IMAGE_BYTES } from "@/lib/validation/image.schema";
 import { useAddToInventory } from "@/lib/queries/inventory";
 import { useScanCardPhoto } from "@/lib/queries/photoMatch";
@@ -25,6 +25,10 @@ const STATUS_MESSAGE: Record<Exclude<PhotoScanStatus, "matched">, string> = {
   no_matches: "No catalog matches for that text.",
   unsupported_type: "That photo format isn't supported.",
   extraction_failed: "Something went wrong reading that photo.",
+  // Deliberately doesn't say "try again": the quota won't come back within the
+  // minute, and every retry spends a request we don't have. Point at the exit
+  // that actually works — the search picker, one tap away below.
+  rate_limited: "Card scanning has hit its daily AI limit. Add the card by searching instead.",
 };
 
 const SIGNAL_LABEL: Record<string, string> = {
@@ -54,6 +58,16 @@ export function ScanAddTab({ onSwitchToSearch }: { onSwitchToSearch: () => void 
 
   const scanMutation = useScanCardPhoto();
   const addMutation = useAddToInventory();
+
+  // The auto-crop's OpenCV chunk is the single biggest asset in the app, and
+  // nothing can be cropped until it's down. This component only mounts once the
+  // user opens the Scan tab (Base UI unmounts inactive tab panels), which is the
+  // earliest moment we know they intend to scan — so start the fetch here and let
+  // it run in the background while they take the photo, rather than starting it
+  // in handleFileSelect and making them watch it.
+  useEffect(() => {
+    warmUpAutoCrop();
+  }, []);
 
   function resetAll() {
     setFile(null);
@@ -298,10 +312,20 @@ export function ScanAddTab({ onSwitchToSearch }: { onSwitchToSearch: () => void 
           )}
 
           <div className="flex justify-center gap-2">
-            <Button type="button" variant="outline" size="sm" onClick={() => setStep("review")}>
-              Try again
-            </Button>
-            <Button type="button" variant="ghost" size="sm" onClick={onSwitchToSearch}>
+            {/* No "Try again" against a spent quota — rescanning the same photo
+                is guaranteed to fail again, so offering it would just walk the
+                user back into the same wall. Search is the only way forward. */}
+            {result.status !== "rate_limited" && (
+              <Button type="button" variant="outline" size="sm" onClick={() => setStep("review")}>
+                Try again
+              </Button>
+            )}
+            <Button
+              type="button"
+              variant={result.status === "rate_limited" ? "default" : "ghost"}
+              size="sm"
+              onClick={onSwitchToSearch}
+            >
               <Search className="size-4" />
               Search manually
             </Button>

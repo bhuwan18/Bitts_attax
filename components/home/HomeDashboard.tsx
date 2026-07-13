@@ -7,12 +7,15 @@ import { RecentCardsRail } from "@/components/home/RecentCardsRail";
 import { TradeMatchesWidget } from "@/components/home/TradeMatchesWidget";
 import { AchievementsPreview } from "@/components/home/AchievementsPreview";
 import { TradersSpotlight } from "@/components/home/TradersSpotlight";
-import { useInventory, useWantList } from "@/lib/queries/inventory";
+import { useInventoryCount, useWantListCount } from "@/lib/queries/inventory";
 import { useTradeMatches } from "@/lib/queries/matches";
 
 export function HomeDashboard() {
-  const { data: inventory } = useInventory();
-  const { data: wantList } = useWantList();
+  // The strip renders three numbers, so it asks for three numbers — it used to
+  // fetch the user's whole inventory and want list (full card rows and all) and
+  // then call .length on them.
+  const { data: inventoryCount } = useInventoryCount();
+  const { data: wantListCount } = useWantListCount();
   const { data: matches } = useTradeMatches();
 
   return (
@@ -21,8 +24,8 @@ export function HomeDashboard() {
       <StatStrip
         size="lg"
         items={[
-          { label: "Unique cards", value: inventory?.length ?? 0, accent: "text-primary" },
-          { label: "On wishlist", value: wantList?.length ?? 0, accent: "text-warning" },
+          { label: "Unique cards", value: inventoryCount ?? 0, accent: "text-primary" },
+          { label: "On wishlist", value: wantListCount ?? 0, accent: "text-warning" },
           { label: "Trade matches", value: matches?.length ?? 0, accent: "text-brand" },
         ]}
       />

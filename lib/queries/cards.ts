@@ -4,6 +4,7 @@ import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
 import {
   CARDS_EFFECTIVE_RELATION,
+  CARD_LIST_SELECT,
   cardsInfiniteQueryKey,
   fetchCardsPage,
   getNextCardsPageParam,
@@ -14,16 +15,26 @@ import type { Card } from "@/lib/types/database.types";
 
 export type { CardFilters, CardListItem };
 
+const CARD_SEARCH_LIMIT = 100;
+
+// The flat, non-paginated search behind the two card *pickers* (CardPicker,
+// HaveWantPicker) — as opposed to useCardsInfinite, which backs the browsable
+// /cards catalog.
+//
+// Returns CardListItem, not Card: a picker renders art, name, team, set, rarity
+// and OVR, and that's exactly what CARD_LIST_SELECT fetches. Selecting `*` here
+// was pulling every stat column plus the `attributes` JSON blob for up to 100
+// rows on every keystroke.
 export function useCards(filters: CardFilters = {}, options: { enabled?: boolean } = {}) {
   const supabase = useSupabase();
 
   return useQuery({
     enabled: options.enabled ?? true,
     queryKey: ["cards", filters],
-    queryFn: async (): Promise<Card[]> => {
+    queryFn: async (): Promise<CardListItem[]> => {
       let query = supabase
         .from(CARDS_EFFECTIVE_RELATION)
-        .select("*")
+        .select(CARD_LIST_SELECT)
         .order("ovr_rating", { ascending: false });
 
       if (filters.search) {
@@ -36,9 +47,9 @@ export function useCards(filters: CardFilters = {}, options: { enabled?: boolean
         query = query.eq("team", filters.team);
       }
 
-      const { data, error } = await query.limit(100);
+      const { data, error } = await query.limit(CARD_SEARCH_LIMIT);
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as CardListItem[];
     },
   });
 }
@@ -62,7 +73,7 @@ export function useMostOwnedCards(limit = 10) {
     queryFn: async (): Promise<CardListItem[]> => {
       const { data, error } = await supabase
         .from(CARDS_EFFECTIVE_RELATION)
-        .select("id, name, team, rarity, ovr_rating, base_price, image_url, set_name")
+        .select(CARD_LIST_SELECT)
         .order("owned_count", { ascending: false })
         .order("created_at", { ascending: false })
         .limit(limit);

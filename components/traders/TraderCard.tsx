@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getInitials } from "@/lib/utils";
-import type { Profile } from "@/lib/types/database.types";
+import type { TraderSummary } from "@/lib/queries/traders";
 import type { TradeMatch } from "@/lib/queries/matches";
 
 export function TraderCard({
@@ -9,7 +9,7 @@ export function TraderCard({
   havesCount,
   match,
 }: {
-  trader: Profile;
+  trader: TraderSummary;
   havesCount: number;
   match?: TradeMatch;
 }) {

@@ -8,8 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { QuantityStepper } from "@/components/shared/QuantityStepper";
-import { useCards } from "@/lib/queries/cards";
-import type { Card } from "@/lib/types/database.types";
+import { useCards, type CardListItem } from "@/lib/queries/cards";
+import { useDebouncedValue, SEARCH_DEBOUNCE_MS } from "@/lib/hooks/useDebouncedValue";
 
 /** A card the user can add to a listing, flattened to just what the UI renders. */
 export interface CardOption {
@@ -27,7 +27,9 @@ export interface PickedItem extends CardOption {
   quantity: number;
 }
 
-export function cardToOption(card: Card, overrides?: Partial<CardOption>): CardOption {
+// Takes the narrow list shape, so a full `Card` (from an inventory embed) and a
+// search result both satisfy it.
+export function cardToOption(card: CardListItem, overrides?: Partial<CardOption>): CardOption {
   return {
     cardId: card.id,
     name: card.name,
@@ -71,12 +73,24 @@ export function HaveWantPicker({
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
 
+  // `search` drives the UI (the input, the in-memory "suggestions" filter — both
+  // free); the debounced copy drives the catalog query, which is a network round
+  // trip per distinct value. Without the split, every keystroke queried Supabase.
+  const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
+
   const showingSearch = search.length > 0;
   const searchingCatalog = showingSearch && searchScope === "catalog";
   const { data: cards, isLoading } = useCards(
-    { search: search || undefined },
-    { enabled: searchingCatalog }
+    { search: debouncedSearch || undefined },
+    { enabled: searchingCatalog && debouncedSearch.length > 0 }
   );
+
+  // Between a keystroke and the debounce firing, the query is still disabled and
+  // therefore reports isLoading: false with no data — which would render "No
+  // cards match" over the user's half-typed query. Treat "waiting to search" as
+  // searching.
+  const awaitingDebounce = searchingCatalog && debouncedSearch !== search;
+  const searching = isLoading || awaitingDebounce;
 
   const added = new Set(items.map((i) => i.cardId));
 
@@ -144,10 +158,10 @@ export function HaveWantPicker({
           <div className="absolute z-20 mt-1.5 flex max-h-72 w-full flex-col overflow-y-auto rounded-xl bg-card p-1 shadow-lg ring-1 ring-border">
             {showingSearch ? (
               <>
-                {isLoading && (
+                {searching && (
                   <p className="p-2.5 text-sm text-muted-foreground">Searching…</p>
                 )}
-                {!isLoading && searchResults.length === 0 && (
+                {!searching && searchResults.length === 0 && (
                   <p className="p-2.5 text-sm text-muted-foreground">
                     No cards match “{search}”.
                   </p>

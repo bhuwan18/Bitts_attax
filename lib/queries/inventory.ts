@@ -73,6 +73,51 @@ export function useWantList() {
   });
 }
 
+// Counts only — for callers that render a number, not a list (the Home stat
+// strip and hero CTA). useInventory()/useWantList() above pull every row *with*
+// its full embedded card, which is the right shape for /inventory and dead
+// weight for "you have 47 cards". `head: true` means Postgres returns the count
+// in a header and no rows at all.
+//
+// The ["inventory", ...] / ["wantList", ...] key prefixes are deliberate:
+// useInvalidateInventory() below invalidates by those prefixes, and TanStack
+// matches prefixes, so these stay in sync with the lists for free.
+export function useInventoryCount() {
+  const supabase = useSupabase();
+  const { data: user } = useCurrentUser();
+
+  return useQuery({
+    queryKey: ["inventory", "count", user?.id],
+    queryFn: async (): Promise<number> => {
+      const { count, error } = await supabase
+        .from("inventory_items")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user!.id);
+      if (error) throw error;
+      return count ?? 0;
+    },
+    enabled: !!user,
+  });
+}
+
+export function useWantListCount() {
+  const supabase = useSupabase();
+  const { data: user } = useCurrentUser();
+
+  return useQuery({
+    queryKey: ["wantList", "count", user?.id],
+    queryFn: async (): Promise<number> => {
+      const { count, error } = await supabase
+        .from("want_items")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user!.id);
+      if (error) throw error;
+      return count ?? 0;
+    },
+    enabled: !!user,
+  });
+}
+
 function useInvalidateInventory() {
   const queryClient = useQueryClient();
   return () => {

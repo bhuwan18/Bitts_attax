@@ -1,28 +1,31 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CardFilters } from "@/components/cards/CardFilters";
 import { CardGrid } from "@/components/cards/CardGrid";
 import { useCardsInfinite, type CardFilters as CardFiltersState } from "@/lib/queries/cards";
-
-const SEARCH_DEBOUNCE_MS = 300;
+import { useDebouncedValue, SEARCH_DEBOUNCE_MS } from "@/lib/hooks/useDebouncedValue";
 
 export function CardSearch() {
+  // Everything except the search box — those come from dropdowns, so they're
+  // already one deliberate change per query and need no debouncing.
   const [filters, setFilters] = useState<CardFiltersState>({});
   const [inputValue, setInputValue] = useState("");
+  const debouncedSearch = useDebouncedValue(inputValue, SEARCH_DEBOUNCE_MS);
 
-  useEffect(() => {
-    const handle = setTimeout(() => {
-      setFilters((f) => ({ ...f, search: inputValue || undefined }));
-    }, SEARCH_DEBOUNCE_MS);
-    return () => clearTimeout(handle);
-  }, [inputValue]);
+  // Merged rather than folded back into `filters` state: the old version wrote
+  // the debounced term into `filters` from an effect, which meant a render with
+  // the new text and the old results (and a second render to correct it).
+  const activeFilters = useMemo<CardFiltersState>(
+    () => ({ ...filters, search: debouncedSearch || undefined }),
+    [filters, debouncedSearch]
+  );
 
   const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } =
-    useCardsInfinite(filters);
+    useCardsInfinite(activeFilters);
   const cards = data?.pages.flat();
 
   return (

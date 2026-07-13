@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { getGeminiClient } from "@/lib/gemini/client";
+import { GEMINI_REQUEST_OPTIONS, getGeminiClient, isRateLimitError } from "@/lib/gemini/client";
 import { ImageFileSchema } from "@/lib/validation/image.schema";
 import {
   EXTRACTION_PROMPT,
@@ -33,7 +33,13 @@ export type PhotoScanStatus =
   | "no_text"
   | "no_matches"
   | "unsupported_type"
-  | "extraction_failed";
+  | "extraction_failed"
+  // Split out from extraction_failed: this one means the app is out of Gemini
+  // quota, which is neither the user's fault nor their photo's, and which
+  // retrying right now cannot fix. Lumping it in with extraction_failed told
+  // them "something went wrong reading that photo" and invited them to retake a
+  // photo that was never the problem.
+  | "rate_limited";
 
 export interface PhotoMatchCandidate {
   card: Card;
@@ -90,7 +96,7 @@ async function findVisualMatch(
         mime_type: "application/json",
         schema: VISUAL_MATCH_SCHEMA,
       },
-    });
+    }, GEMINI_REQUEST_OPTIONS);
     if (!interaction.output_text) return null;
 
     const visualMatch = normalizeVisualMatch(JSON.parse(interaction.output_text));
@@ -137,14 +143,18 @@ export async function scanCardPhoto(image: File): Promise<PhotoScanResult> {
         mime_type: "application/json",
         schema: EXTRACTION_SCHEMA,
       },
-    });
+    }, GEMINI_REQUEST_OPTIONS);
     if (!interaction.output_text) throw new Error("Gemini returned no output.");
     extraction = normalizeExtraction(JSON.parse(interaction.output_text));
   } catch (err) {
-    // Gemini API error, timeout, rate limit (including free-tier quota
-    // exhaustion), or malformed JSON all collapse to one status — the
-    // dialog's "Search manually" fallback covers every one of them the same
-    // way, so there's no value in distinguishing them for the caller.
+    // Quota exhaustion is called out on its own (see PhotoScanStatus). Every
+    // other failure — API error, timeout, malformed JSON — still collapses to
+    // extraction_failed, because the dialog's "Search manually" fallback covers
+    // them all identically and the user can't act on the difference.
+    if (isRateLimitError(err)) {
+      console.error("scanCardPhoto: Gemini quota exhausted", err);
+      return { status: "rate_limited", extraction: null, candidates: [] };
+    }
     console.error("scanCardPhoto: Gemini call failed", err);
     extraction = null;
   }

@@ -3,11 +3,10 @@
 import Link from "next/link";
 import { ArrowRight, Heart, Repeat, ScanLine, Users, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { resolveHeroCta, selectIncomingOffer, type HeroCtaId } from "@/lib/home/heroCta";
-import { useCurrentUser } from "@/lib/queries/auth";
-import { useInventory, useWantList } from "@/lib/queries/inventory";
+import { resolveHeroCta, type HeroCtaId } from "@/lib/home/heroCta";
+import { useInventoryCount, useWantListCount } from "@/lib/queries/inventory";
 import { useTradeMatches } from "@/lib/queries/matches";
-import { useMyTrades } from "@/lib/queries/trades";
+import { useIncomingOffer } from "@/lib/queries/trades";
 import { cn } from "@/lib/utils";
 
 // Presentation-only, resolved here rather than in lib/home/heroCta.ts so that
@@ -40,25 +39,32 @@ const SHELL = "min-h-38 rounded-2xl sm:min-h-24";
 // hides itself when it has no data, so without this a new user's home screen is
 // a greeting and three zeroes.
 export function HeroCta() {
-  const { data: user } = useCurrentUser();
-  const { data: inventory } = useInventory();
-  const { data: wantList } = useWantList();
-  const { data: trades } = useMyTrades();
+  // Counts and a single-row offer lookup, not the underlying lists: the ladder
+  // below only ever asks "how many?" and "is anyone waiting on me?". Pulling
+  // whole collections (and every trade the user has ever been in) to answer that
+  // is what used to make this the most expensive component on the home screen.
+  const inventoryCount = useInventoryCount();
+  const wantListCount = useWantListCount();
+  const incomingOffer = useIncomingOffer();
   const { data: matches } = useTradeMatches();
 
   // Resolving the ladder against half-loaded data would flash "Add your first
   // card" at an established collector before correcting itself. Matches are
   // exempt from the wait: they gate only the fourth rung, and if the first
   // three are unmet the answer doesn't depend on them.
-  if (!user || !inventory || !wantList || !trades) {
+  //
+  // Gate on isPending rather than on the data: `0` and `null` are meaningful
+  // answers here (an empty collection, no offer waiting), so a falsy check would
+  // treat a loaded "nothing" as "still loading" and never render.
+  if (inventoryCount.isPending || wantListCount.isPending || incomingOffer.isPending) {
     return <div aria-hidden="true" className={cn(SHELL, "animate-pulse bg-muted")} />;
   }
 
   const cta = resolveHeroCta({
-    inventoryCount: inventory.length,
-    wantListCount: wantList.length,
+    inventoryCount: inventoryCount.data ?? 0,
+    wantListCount: wantListCount.data ?? 0,
     matchCount: matches?.length ?? 0,
-    incomingOffer: selectIncomingOffer(trades, user.id),
+    incomingOffer: incomingOffer.data ?? null,
   });
   const Icon = HERO_ICON[cta.id];
 

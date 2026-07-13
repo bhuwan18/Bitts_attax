@@ -747,6 +747,12 @@ export type Database = {
         Returns: { other_user_id: string; they_have_count: number; mutual: boolean }[]
       }
       // Hand-added ahead of `supabase gen types` regeneration — defined in
+      // supabase/migrations/0019_inventory_haves_counts_rpc.sql, not yet applied.
+      inventory_haves_counts: {
+        Args: never
+        Returns: { trader_id: string; haves_count: number }[]
+      }
+      // Hand-added ahead of `supabase gen types` regeneration — defined in
       // supabase/migrations/0017_match_cards_by_text.sql, not yet applied.
       // Redefined in 0018 to return `setof cards_effective` rather than
       // `setof cards`, so a scanned card carries its LLM-estimated ovr_rating.

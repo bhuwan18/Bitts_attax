@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
 import { useCurrentUser } from "@/lib/queries/auth";
+import { selectIncomingOffer } from "@/lib/home/heroCta";
 import { CARD_WITH_ESTIMATE_SELECT, withEffectiveOvrOnItems } from "@/lib/queries/cardsShared";
 import type { Card, Profile, Trade, TradeListing } from "@/lib/types/database.types";
 
@@ -10,6 +11,13 @@ export interface TradeListingWithDetails extends TradeListing {
   owner: Pick<Profile, "id" | "username" | "display_name"> | null;
   items: { side: "have" | "want"; quantity: number; card: Card }[];
 }
+
+// Both of these lists pull full card rows through a nested embed, so an
+// unbounded fetch gets expensive fast. Neither screen paginates yet — these are
+// ceilings, not page sizes, and the day either list can realistically reach one
+// is the day it needs a "load more" (see useCardsInfinite for the pattern).
+const TRADE_LISTINGS_LIMIT = 50;
+const MY_TRADES_LIMIT = 50;
 
 export function useTradeListings() {
   const supabase = useSupabase();
@@ -23,7 +31,8 @@ export function useTradeListings() {
           `*, owner:profiles(id, username, display_name), items:trade_listing_items(side, quantity, card:cards(${CARD_WITH_ESTIMATE_SELECT}))`
         )
         .eq("status", "open")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(TRADE_LISTINGS_LIMIT);
 
       if (error) throw error;
       return withEffectiveOvrOnItems((data ?? []) as unknown as TradeListingWithDetails[]);
@@ -154,13 +163,51 @@ export function useMyTrades() {
           `*, initiator:profiles!trades_initiator_id_fkey(id, username, display_name), counterparty:profiles!trades_counterparty_id_fkey(id, username, display_name), items:trade_items(offered_by, quantity, card:cards(${CARD_WITH_ESTIMATE_SELECT}))`
         )
         .or(`initiator_id.eq.${user!.id},counterparty_id.eq.${user!.id}`)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(MY_TRADES_LIMIT);
 
       if (error) throw error;
       return attachAvailability(
         supabase,
         withEffectiveOvrOnItems((data ?? []) as unknown as TradeWithDetails[])
       );
+    },
+    enabled: !!user,
+  });
+}
+
+// The one thing the Home hero needs to know about trades: is someone waiting on
+// a reply from me?
+//
+// The hero used to answer that with useMyTrades() — every trade the user had
+// ever been in, each with its full nested card rows, plus the follow-up
+// availability query — to look at, at most, one of them. That made the single
+// heaviest query in the app a blocking dependency of the home screen. This asks
+// the database the actual question instead: newest still-proposed trade where
+// I'm the counterparty, one row, four columns.
+//
+// selectIncomingOffer() is reused (rather than inlined) so the "whose turn is
+// it" rule lives in exactly one tested place — the where-clause here narrows the
+// same predicate, it doesn't reimplement it.
+export function useIncomingOffer() {
+  const supabase = useSupabase();
+  const { data: user } = useCurrentUser();
+
+  return useQuery({
+    queryKey: ["incomingOffer", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("trades")
+        .select(
+          "id, status, counterparty_id, initiator:profiles!trades_initiator_id_fkey(id, username, display_name)"
+        )
+        .eq("counterparty_id", user!.id)
+        .eq("status", "proposed")
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (error) throw error;
+      return selectIncomingOffer(data ?? [], user!.id);
     },
     enabled: !!user,
   });

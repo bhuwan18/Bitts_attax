@@ -69,6 +69,12 @@ export type CardListItem = Pick<
   "id" | "name" | "team" | "rarity" | "ovr_rating" | "base_price" | "image_url" | "set_name"
 >;
 
+// Everything a card *tile* renders, and nothing else — no per-stat columns, no
+// `attributes` JSON. Kept beside CardListItem (and used by every query that
+// returns one) so the type and the column list can't drift apart.
+export const CARD_LIST_SELECT =
+  "id, name, team, rarity, ovr_rating, base_price, image_url, set_name";
+
 // Server prefetch (app/(main)/cards/page.tsx) and the client useInfiniteQuery
 // (lib/queries/cards.ts) must build this identically — dehydrate/HydrationBoundary
 // match dehydrated queries to client observers by hashing this key.
@@ -86,7 +92,7 @@ export async function fetchCardsPage(
     // one, or the cards this feature just rated would still pile up in the NULL
     // tail at the bottom of the catalog.
     .from(CARDS_EFFECTIVE_RELATION)
-    .select("id, name, team, rarity, ovr_rating, base_price, image_url, set_name")
+    .select(CARD_LIST_SELECT)
     // ovr_rating first (primary sort), then global ownership (owned_count,
     // sum of inventory_items.quantity across all users — see migration
     // 0016_cards_owned_count.sql) as a popularity tiebreak. ovr_rating and

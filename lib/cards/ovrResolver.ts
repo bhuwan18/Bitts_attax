@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getGeminiClient } from "@/lib/gemini/client";
+import { GEMINI_REQUEST_OPTIONS, getGeminiClient, isRateLimitError } from "@/lib/gemini/client";
 import type { Database } from "@/lib/types/database.types";
 import {
   OVR_ESTIMATION_MODEL,
@@ -32,19 +32,30 @@ import {
 // trade is only ever a handful of cards — so keep the fan-out modest.
 const ESTIMATE_CONCURRENCY = 4;
 
-// Hard ceiling per invocation, as a backstop rather than an expected limit: a
-// Server Action runs inside a serverless function with a wall-clock limit, and
-// nothing should be feeding this more cards than a trade contains. If
-// `remaining` is ever non-zero in practice, something is calling this with far
-// more cards than a trade holds and is worth looking at.
-const MAX_ESTIMATES_PER_RUN = 25;
+// Hard ceiling per invocation. This used to be 25 — which was *above the entire
+// free-tier request allowance* (20 for gemini-3.5-flash). Because
+// computeAndPersistFairness() runs on every view of a trade detail page, opening
+// one trade full of unrated cards could spend the whole day's quota in a single
+// page load and take the photo scanner (same API key) down with it. That is
+// exactly what happened.
+//
+// 8 keeps a single trade view well inside the allowance and leaves headroom for
+// the scanner, which is the interactive, user-facing consumer and should win any
+// contention with a background scoring nicety. Cards past the cap are simply
+// left unrated this run (`remaining` reports them) and get picked up on the next
+// view, by which point the earlier ones are cached and cost nothing — the work
+// still converges, just without a cliff.
+const MAX_ESTIMATES_PER_RUN = 8;
 
 export interface OvrEstimateStats {
   /** Cards that got a fresh LLM rating on this run (billed + newly cached). */
   estimated: number;
   /** Cards already in the shared cache — no LLM call, no cost. */
   cached: number;
-  /** Cards the model couldn't rate, or that errored. Left unrated. */
+  /**
+   * Cards the model couldn't rate, that errored, or that were abandoned once the
+   * quota ran out mid-run (see estimateOne). All left unrated.
+   */
   failed: number;
   /** Cards still needing an estimate because MAX_ESTIMATES_PER_RUN was hit. */
   remaining: number;
@@ -69,6 +80,11 @@ async function mapWithConcurrency<T, R>(
   return results;
 }
 
+/** Shared across one resolveOvrRatings() fan-out, so the workers can call it off. */
+interface RunState {
+  quotaExhausted: boolean;
+}
+
 // One Gemini call for one card. Image-first: the card's catalog art is passed
 // by URL (Gemini fetches it directly — no server-side download/re-upload), since
 // these cards print the OVR on the face and reading it beats guessing at it.
@@ -79,7 +95,18 @@ async function mapWithConcurrency<T, R>(
 // means the same thing to the caller ("no estimate for this card, leave it
 // unrated"), and none of them may be allowed to take down the trade the user is
 // actually trying to look at.
-async function estimateOne(card: OvrEstimateCandidate): Promise<OvrEstimate | null> {
+//
+// A 429 is the one failure that says something about the *next* card as well as
+// this one: the quota is gone for the rest of this run, so every remaining call
+// is a guaranteed failure that still costs a retry, a backoff, and another
+// request against an allowance we've already blown. So the first 429 trips
+// `state` and the rest of the batch short-circuits without touching the network.
+async function estimateOne(
+  card: OvrEstimateCandidate,
+  state: RunState
+): Promise<OvrEstimate | null> {
+  if (state.quotaExhausted) return null;
+
   const imageUrl = card.image_url;
 
   try {
@@ -98,11 +125,19 @@ async function estimateOne(card: OvrEstimateCandidate): Promise<OvrEstimate | nu
         mime_type: "application/json",
         schema: OVR_ESTIMATION_SCHEMA,
       },
-    });
+    }, GEMINI_REQUEST_OPTIONS);
 
     if (!interaction.output_text) return null;
     return normalizeOvrEstimate(JSON.parse(interaction.output_text));
   } catch (err) {
+    if (isRateLimitError(err)) {
+      state.quotaExhausted = true;
+      console.error(
+        `estimateOne: Gemini quota exhausted at card ${card.id} — abandoning the rest of this batch`,
+        err
+      );
+      return null;
+    }
     console.error(`estimateOne: Gemini call failed for card ${card.id}`, err);
     return null;
   }
@@ -152,7 +187,10 @@ export async function resolveOvrRatings(
   const missing = selectCardsNeedingEstimate(unrated, new Set(ratings.keys()));
   const batch = missing.slice(0, MAX_ESTIMATES_PER_RUN);
 
-  const estimates = await mapWithConcurrency(batch, ESTIMATE_CONCURRENCY, estimateOne);
+  const state: RunState = { quotaExhausted: false };
+  const estimates = await mapWithConcurrency(batch, ESTIMATE_CONCURRENCY, (card) =>
+    estimateOne(card, state)
+  );
 
   const rows = batch
     .map((card, i) => ({ card, estimate: estimates[i] }))

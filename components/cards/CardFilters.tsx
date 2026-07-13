@@ -179,8 +179,11 @@ export function CardFilters({
         </SelectContent>
       </Select>
 
+      {/* Clears the facets only — the search term is owned by CardSearch (it
+          lives outside this state so it can be debounced), so it survives, which
+          is the same behaviour this had when it re-seeded `search` by hand. */}
       {activeCount > 0 && (
-        <Button variant="ghost" size="sm" onClick={() => onChange({ search: filters.search })}>
+        <Button variant="ghost" size="sm" onClick={() => onChange({})}>
           Clear filters
         </Button>
       )}

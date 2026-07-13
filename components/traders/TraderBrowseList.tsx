@@ -6,11 +6,15 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTraderHavesCounts, useTraders } from "@/lib/queries/traders";
 import { useTradeMatches } from "@/lib/queries/matches";
+import { useDebouncedValue, SEARCH_DEBOUNCE_MS } from "@/lib/hooks/useDebouncedValue";
 import { TraderCard } from "@/components/traders/TraderCard";
 
 export function TraderBrowseList() {
   const [search, setSearch] = useState("");
-  const { data: traders, isLoading } = useTraders(search || undefined);
+  // Debounced for the same reason as the card pickers: the raw value would put a
+  // new `profiles` ilike query on the wire for every character typed.
+  const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
+  const { data: traders, isLoading } = useTraders(debouncedSearch || undefined);
   const { data: havesCounts } = useTraderHavesCounts();
   // One query feeding a per-row lookup, not N queries — same shape as
   // useTraderHavesCounts() above.

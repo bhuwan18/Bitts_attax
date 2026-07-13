@@ -23,6 +23,13 @@ export interface TraderWantItem {
   card: Card;
 }
 
+/** Everything the trader list/spotlight rows actually render. */
+export type TraderSummary = Pick<Profile, "id" | "username" | "display_name" | "avatar_url">;
+
+const TRADER_SUMMARY_SELECT = "id, username, display_name, avatar_url";
+
+const TRADERS_LIMIT = 100;
+
 // Every profile except the caller's own, optionally filtered by username/display
 // name. `profiles` select RLS is public, so this works for any signed-in caller.
 export function useTraders(search?: string) {
@@ -31,8 +38,13 @@ export function useTraders(search?: string) {
 
   return useQuery({
     queryKey: ["traders", search, currentUser?.id],
-    queryFn: async (): Promise<Profile[]> => {
-      let query = supabase.from("profiles").select("*").order("username", { ascending: true });
+    queryFn: async (): Promise<TraderSummary[]> => {
+      let query = supabase
+        .from("profiles")
+        // Four columns, not `*`: a trader row is an avatar and two lines of
+        // text, and the spotlight on Home renders four of them.
+        .select(TRADER_SUMMARY_SELECT)
+        .order("username", { ascending: true });
 
       if (currentUser?.id) {
         query = query.neq("id", currentUser.id);
@@ -41,7 +53,7 @@ export function useTraders(search?: string) {
         query = query.or(`username.ilike.%${search}%,display_name.ilike.%${search}%`);
       }
 
-      const { data, error } = await query.limit(100);
+      const { data, error } = await query.limit(TRADERS_LIMIT);
       if (error) throw error;
       return data ?? [];
     },
@@ -49,21 +61,25 @@ export function useTraders(search?: string) {
   });
 }
 
-// One lightweight query for the whole browse list's Haves counts, rather than
-// one query per trader — `inventory_items` select is public (see below), so
-// this returns every user's row count in a single round trip.
+// Haves count per trader, for the browse list and the Home spotlight.
+//
+// The aggregate happens in Postgres (inventory_haves_counts(), 0019), not here.
+// This used to `select("user_id")` across the whole inventory_items table and
+// count the rows in JS, which shipped the entire table to the client and — worse
+// — quietly under-reported once the table passed PostgREST's 1000-row response
+// cap. One row per trader now, and correct at any size.
 export function useTraderHavesCounts() {
   const supabase = useSupabase();
 
   return useQuery({
     queryKey: ["traderHavesCounts"],
     queryFn: async (): Promise<Record<string, number>> => {
-      const { data, error } = await supabase.from("inventory_items").select("user_id");
+      const { data, error } = await supabase.rpc("inventory_haves_counts");
       if (error) throw error;
 
       const counts: Record<string, number> = {};
       for (const row of data ?? []) {
-        counts[row.user_id] = (counts[row.user_id] ?? 0) + 1;
+        counts[row.trader_id] = row.haves_count;
       }
       return counts;
     },
