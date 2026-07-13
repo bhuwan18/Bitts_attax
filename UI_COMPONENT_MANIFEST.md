@@ -9,14 +9,19 @@ infrastructure, not application UI. Everything else is hand-written for this app
 | Component | Purpose |
 |---|---|
 | `HomeDashboard.tsx` | Client composition root for the Home dashboard: stat row + `StreakBanner` + `TradeMatchesWidget` + `RecentCardsRail` |
+| `HomeGreeting.tsx` | "Welcome back, ‹name›" header, name from `useCurrentProfile()` (usually already warm in cache — `TopBar` runs the same query from the shared layout) |
 | `StreakBanner.tsx` | Current login-streak banner (`useCurrentStreak()`), renders nothing if the streak is 0 |
 | `RecentCardsRail.tsx` | Horizontal `ScrollArea` of the catalog's most-owned cards (`useMostOwnedCards()`), reuses `CardTile` |
 | `TradeMatchesWidget.tsx` | Top-3 trade matches (`useTradeMatches(3)`), each linking to `/traders/[userId]` |
 
-Used by: `app/(main)/page.tsx` — the authenticated landing route (`/`), a Server Component that
-fetches the display name for the welcome header and mounts `HomeDashboard`. `proxy.ts` gives root
-`/` its own exact-match protection check rather than joining the prefix-based list, since every
-pathname starts with `/`.
+Used by: `app/(main)/page.tsx` — the authenticated landing route (`/`). It's a **static** Server
+Component that just composes `HomeGreeting` + `HomeDashboard`; both read their data client-side
+through RLS-scoped TanStack queries. Keep it that way: the moment this page awaits
+`supabase.auth.getUser()` (as it once did, only to read a display name) the route turns dynamic,
+`<Link>` stops prefetching it, and tapping Home in `BottomNav` stalls on a server round-trip before
+anything can paint. `proxy.ts` already gates `/` behind a real `getUser()`, so a redirect here would
+be redundant anyway — it gives root `/` its own exact-match protection check rather than joining the
+prefix-based list, since every pathname starts with `/`.
 
 ## Cards (`components/cards/`)
 
@@ -50,7 +55,7 @@ Used by: `app/(main)/inventory/page.tsx` (Tabs: Haves / Wants).
 | Component | Purpose |
 |---|---|
 | `TradeListingCard.tsx` | One browsable listing: haves/wants badges, "Propose Trade" button (calls `proposeTrade`) |
-| `TradeBrowseList.tsx` | Fetches and renders all open listings via `useTradeListings()` |
+| `TradeBrowseList.tsx` | Fetches and renders all open listings via `useTradeListings()`; reads the caller from `useCurrentUser()` rather than a prop, so `/trades` can stay a static route |
 | `TradeListingForm.tsx` | Create-listing form: two `HaveWantPicker`s (offer/want) first, then a value-balance hint, a live `ListingPreview`, an optional title, and a requirement-gated submit; calls `createTradeListing` |
 | `HaveWantPicker.tsx` | Rich card picker (thumbnail + team + OVR), reused for both listing sides; surfaces `suggestions` (the caller passes inventory for Haves, want-list for Wants) before the user types, falls back to catalog search via `useCards`, and marks already-added cards. Exports `CardOption`/`PickedItem` + `cardToOption` |
 | `ListingPreview.tsx` | Read-only preview mirroring `TradeListingCard`'s offering/looking-for pills, shown live as the form is filled |
@@ -58,7 +63,11 @@ Used by: `app/(main)/inventory/page.tsx` (Tabs: Haves / Wants).
 | `MyTradesList.tsx` | `useMyTrades()` — every trade the caller is a party to (either side), grouped into an active list and a "Completed" section below it; give/get item badges, status badge, links to the trade detail page and its chat, a Cancel button (`updateTradeStatus(id, "cancelled")`) shown only to the initiator while `status === "proposed"`, a Mark complete button (`confirmTradeCompletion`) shown while `status === "accepted"` and the caller hasn't already confirmed — with a "Waiting for ‹name› to confirm…" line once they have — and a compact warning banner (`getInsufficientTradeItems`) when a giver has since edited their Haves below what the trade still promises |
 
 Used by: `app/(main)/trades/page.tsx` (Tabs: Browse — `TradeBrowseList` — / My Trades —
-`MyTradesList`), `app/(main)/trades/new/page.tsx` (create), `app/(main)/trades/[tradeId]/page.tsx`
+`MyTradesList`). That page is **static** for the same reason `app/(main)/page.tsx` is: both lists
+derive the caller from `useCurrentUser()` themselves, so the page never has to `await
+supabase.auth.getUser()` just to hand a `currentUserId` prop down — which is what used to make the
+Trades tab pay a server round-trip on every tap. Also `app/(main)/trades/new/page.tsx` (create),
+`app/(main)/trades/[tradeId]/page.tsx`
 (detail — renders `FairnessMeter`, give/get badges, accept/decline actions, the same Mark complete /
 "waiting on the other party" flow as `MyTradesList.tsx`, and a per-card breakdown of the same
 insufficient-stock warning).
@@ -138,7 +147,7 @@ replaced by this floating pill everywhere per direct feedback that it worked bet
 | Component | Purpose |
 |---|---|
 | `TopBar.tsx` | Sticky top bar — deliberately full-bleed (matches each page's own `px-4 sm:px-6` rather than centering in its own max-width, so the wordmark stays flush with whatever container the page below uses, which varies from `max-w-2xl` to `max-w-6xl`). Logo/wordmark (links to `/`, no active-state styling — that read as a stray chip on a brand mark) + a conditional Admin `Shield` link (only relevant to a handful of users, so it doesn't take a permanent slot in `BottomNav`) + `NotificationBell.tsx`; this is the bell's only mount point |
-| `BottomNav.tsx` | Fixed floating pill nav, inset from the screen edges (not edge-to-edge), opaque `bg-card` with a soft brand-color ambient glow (`nav-float-glow` utility) rather than translucent glassmorphism. Cards is elevated into its own separate floating glowing button above the pill (the app's "hero" content gets star billing, the same idea as an Instagram-style floating create button); the pill itself holds Home / Inventory / Trades / Traders / Profile — Home needs an exact pathname match (`href === "/"`), not `startsWith`, since every route starts with `/` |
+| `BottomNav.tsx` | Fixed floating pill nav, inset from the screen edges (not edge-to-edge), opaque `bg-card` with a soft brand-color ambient glow (`nav-float-glow` utility) rather than translucent glassmorphism. Cards is elevated into its own separate floating glowing button above the pill (the app's "hero" content gets star billing, the same idea as an Instagram-style floating create button); the pill itself holds Home / Inventory / Trades / Traders / Profile — Home needs an exact pathname match (`href === "/"`), not `startsWith`, since every route starts with `/`. **Tap feedback is deliberately not derived from `usePathname()` alone** — see below |
 | `LogoutButton.tsx` | Signs out via Supabase and redirects to `/login` |
 
 Used by: `app/(main)/layout.tsx`, a simple vertical stack — `TopBar` → `<main>` (with bottom padding
@@ -146,6 +155,32 @@ reserved so content never sits under the floating nav) → `BottomNav`. No respo
 the layout level at all; `BottomNav`'s own pill width is capped by design (`max-w-md`), not by the
 viewport, so it looks the same (centered, capped-width) whether the screen is a phone or a desktop
 monitor.
+
+### Why the pill highlight isn't just `usePathname()`
+
+`usePathname()` doesn't change until the destination has actually rendered. On any route the router
+hasn't prefetched, that meant a tap produced *zero* pixels of change until the server came back — so
+people assumed it hadn't registered and tapped again, restarting the navigation and making it slower
+still. Three things fix that, and they're layered on purpose:
+
+1. **Keep the nav's destinations prefetchable.** A statically-renderable route is fully prefetched by
+   `<Link>`, so the navigation commits with no server round-trip and the highlight moves instantly.
+   `/`, `/inventory`, `/trades` and `/traders` are all static — don't add a server-side
+   `supabase.auth.getUser()` (or any other dynamic API) to those pages without realising it silently
+   costs a round-trip on every tab tap.
+2. **`loading.tsx` for the ones that can't be.** `/cards` and `/profile` genuinely need request-time
+   data, so each has its own leaf `loading.tsx`, which partially prefetches a shell and lets the tap
+   commit to a skeleton immediately. Note these must stay at the **leaf**: a `loading.tsx` is the
+   Suspense fallback for its whole subtree, so one at the `(main)` route-group level would show the
+   *Home* skeleton when you navigate to `/traders`, and one at `trades/` would show the *listings*
+   skeleton when you open `/trades/[tradeId]`.
+3. **Optimistic highlight for whatever's left.** Each pill reports its own `useLinkStatus()` pending
+   state up to `BottomNav`, which highlights `pendingHref ?? pathname` and shows a `nav-pending-ping`
+   ring on the tapped pill. `useLinkStatus` (rather than a plain `onClick` flag) because it also
+   settles back to `false` when a navigation is aborted or superseded, so the highlight can't stick
+   on a tab we never reached. The ping is delayed 120ms in CSS so an instant, prefetched switch never
+   flashes a loading hint. `active:scale-90` + `touch-manipulation` give a tactile press that owes
+   nothing to the network at all.
 
 ## Providers (`components/providers/`)
 

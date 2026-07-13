@@ -6,15 +6,59 @@ import { toast } from "sonner";
 import { AlertTriangle, CheckCheck, MessageCircle, Repeat, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { RarityBadge } from "@/components/cards/RarityBadge";
+import { CardThumb } from "@/components/cards/CardThumb";
+import { useCurrentUser } from "@/lib/queries/auth";
 import { useMyTrades, getInsufficientTradeItems, type TradeWithDetails } from "@/lib/queries/trades";
 import { updateTradeStatus, confirmTradeCompletion } from "@/app/(main)/trades/actions";
 import { TRADE_STATUS_STYLE } from "@/lib/trades/status";
 
-export function MyTradesList({ currentUserId }: { currentUserId: string | null }) {
+function MyTradesSkeleton() {
+  return (
+    <div className="flex flex-col gap-3">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div key={i} className="flex flex-col gap-3 rounded-xl bg-card p-4 ring-1 ring-border">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-col gap-1.5">
+              <Skeleton className="h-5 w-44" />
+              <Skeleton className="h-3 w-20" />
+            </div>
+            <Skeleton className="h-6 w-20 shrink-0 rounded-full" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {Array.from({ length: 2 }).map((_, col) => (
+              <div key={col} className="flex flex-col gap-1.5">
+                <Skeleton className="h-3 w-16" />
+                <div className="flex items-center gap-2">
+                  <Skeleton className="size-10 shrink-0 rounded-md" />
+                  <div className="flex min-w-0 flex-1 flex-col gap-1">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-3 w-2/3" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <Skeleton className="h-8 flex-1 rounded-md" />
+            <Skeleton className="h-8 w-10 rounded-md" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function MyTradesList() {
+  // Read from the client rather than taking a `currentUserId` prop — the prop
+  // is what forced app/(main)/trades/page.tsx to be a dynamic Server Component.
+  const { data: user } = useCurrentUser();
+  const currentUserId = user?.id ?? null;
   const { data: trades, isLoading, refetch } = useMyTrades();
   const [pendingId, setPendingId] = useState<string | null>(null);
 
-  if (isLoading) return <p className="text-sm text-muted-foreground">Loading your trades…</p>;
+  if (isLoading) return <MyTradesSkeleton />;
 
   if (!trades || trades.length === 0) {
     return (
@@ -181,17 +225,30 @@ function ItemGroup({
   items,
 }: {
   label: string;
-  items: { card: { id: string; name: string }; quantity: number }[];
+  items: TradeWithDetails["items"];
 }) {
   return (
     <div className="flex flex-col gap-1.5">
       <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">{label}</p>
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-2">
         {items.map((i) => (
-          <span key={i.card.id} className="truncate text-sm font-medium">
-            {i.card.name}
-            {i.quantity > 1 && <span className="text-muted-foreground"> ×{i.quantity}</span>}
-          </span>
+          <div key={i.card.id} className="flex items-center gap-2">
+            <CardThumb name={i.card.name} imageUrl={i.card.image_url} rarity={i.card.rarity} />
+            <div className="flex min-w-0 flex-col gap-0.5">
+              <span className="truncate text-sm font-medium">
+                {i.card.name}
+                {i.quantity > 1 && <span className="text-muted-foreground"> ×{i.quantity}</span>}
+              </span>
+              <div className="flex items-center gap-1.5">
+                <RarityBadge rarity={i.card.rarity} />
+                {i.card.set_name && (
+                  <span className="truncate text-[11px] text-muted-foreground/70">
+                    {i.card.set_name}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
         ))}
       </div>
     </div>

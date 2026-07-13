@@ -49,6 +49,7 @@ export function CardPicker({
                 <p className="truncate text-sm font-medium">{card.name}</p>
                 <p className="truncate text-xs text-muted-foreground">
                   {card.team ?? "—"} · {card.rarity.replace("_", " ")}
+                  {card.set_name && ` · ${card.set_name}`}
                 </p>
               </div>
               <Button

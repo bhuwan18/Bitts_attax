@@ -4,18 +4,18 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TradeBrowseList } from "@/components/trades/TradeBrowseList";
 import { MyTradesList } from "@/components/trades/MyTradesList";
-import { createClient } from "@/lib/supabase/server";
 
 export const metadata = {
   title: "Trades — Bitts Attax",
 };
 
-export default async function TradesPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+// Deliberately not an async Server Component — same reasoning as the Home page.
+// The getUser() call this used to make existed only to hand `currentUserId`
+// down to the two lists, but it made the route dynamic, so <Link> couldn't
+// prefetch it and every tap on the Trades pill paid a Supabase round-trip
+// before anything rendered. Both lists now read the user from useCurrentUser()
+// alongside the TanStack queries they were already running.
+export default function TradesPage() {
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-5 p-4 sm:p-6">
       <div className="flex items-center justify-between gap-3">
@@ -34,10 +34,10 @@ export default async function TradesPage() {
           <TabsTrigger value="mine">My Trades</TabsTrigger>
         </TabsList>
         <TabsContent value="browse" className="mt-4">
-          <TradeBrowseList currentUserId={user?.id ?? null} />
+          <TradeBrowseList />
         </TabsContent>
         <TabsContent value="mine" className="mt-4">
-          <MyTradesList currentUserId={user?.id ?? null} />
+          <MyTradesList />
         </TabsContent>
       </Tabs>
     </div>

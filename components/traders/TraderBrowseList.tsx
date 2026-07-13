@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Search, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useTraderHavesCounts, useTraders } from "@/lib/queries/traders";
 import { useTradeMatches } from "@/lib/queries/matches";
 import { TraderCard } from "@/components/traders/TraderCard";
@@ -30,7 +31,22 @@ export function TraderBrowseList() {
         />
       </div>
 
-      {isLoading && <p className="text-sm text-muted-foreground">Loading traders…</p>}
+      {/* Mirrors TraderCard's avatar + two-line body + trailing count so rows
+          don't reflow when the real traders land. */}
+      {isLoading && (
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-3 rounded-xl bg-card p-3 ring-1 ring-border">
+              <Skeleton className="size-11 shrink-0 rounded-full" />
+              <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-3 w-20" />
+              </div>
+              <Skeleton className="h-3 w-12 shrink-0" />
+            </div>
+          ))}
+        </div>
+      )}
 
       {!isLoading && (!traders || traders.length === 0) && (
         <div className="flex flex-col items-center gap-2 rounded-xl bg-muted/60 py-14 text-center">

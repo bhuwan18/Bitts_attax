@@ -6,6 +6,7 @@ import { Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { RARITY_BORDER_CLASS, RARITY_GLOW_CLASS } from "@/lib/cards/rarity";
+import { RarityBadge } from "@/components/cards/RarityBadge";
 import { TraderCardDialog } from "@/components/traders/TraderCardDialog";
 import { useTradeDraft } from "@/components/traders/TradeDraftProvider";
 import type { TraderInventoryItem } from "@/lib/queries/traders";
@@ -73,6 +74,12 @@ export function TraderInventoryGrid({
               <div className="flex flex-col gap-0.5">
                 <p className="truncate text-sm font-semibold">{item.card.name}</p>
                 <p className="truncate text-xs text-muted-foreground">{item.card.team ?? "—"}</p>
+                {item.card.set_name && (
+                  <p className="truncate text-[11px] text-muted-foreground/70">
+                    {item.card.set_name}
+                  </p>
+                )}
+                <RarityBadge rarity={item.card.rarity} className="mt-0.5" />
               </div>
             </button>
           );

@@ -58,7 +58,7 @@ export function useMostOwnedCards(limit = 10) {
     queryFn: async (): Promise<CardListItem[]> => {
       const { data, error } = await supabase
         .from("cards")
-        .select("id, name, team, rarity, ovr_rating, base_price, image_url")
+        .select("id, name, team, rarity, ovr_rating, base_price, image_url, set_name")
         .order("owned_count", { ascending: false })
         .order("created_at", { ascending: false })
         .limit(limit);

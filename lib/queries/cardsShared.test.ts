@@ -10,6 +10,7 @@ function makeCards(count: number): CardListItem[] {
     ovr_rating: 80,
     base_price: 1,
     image_url: null,
+    set_name: null,
   }));
 }
 

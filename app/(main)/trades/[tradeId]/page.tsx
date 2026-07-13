@@ -7,7 +7,9 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { FairnessMeter } from "@/components/trades/FairnessMeter";
-import { useTrade, getInsufficientTradeItems } from "@/lib/queries/trades";
+import { RarityBadge } from "@/components/cards/RarityBadge";
+import { CardThumb } from "@/components/cards/CardThumb";
+import { useTrade, getInsufficientTradeItems, type TradeWithDetails } from "@/lib/queries/trades";
 import { useCurrentUser } from "@/lib/queries/auth";
 import { computeAndPersistFairness } from "./fairness-actions";
 import { updateTradeStatus, confirmTradeCompletion } from "@/app/(main)/trades/actions";
@@ -99,7 +101,8 @@ export default function TradeDetailPage({ params }: { params: Promise<{ tradeId:
             <p className="font-medium text-warning">Some offered cards may no longer be available</p>
             {insufficientItems.map((item) => (
               <p key={item.card.id} className="text-muted-foreground">
-                {nameFor(item.offered_by)} now has {item.availableQuantity} of {item.card.name}, but{" "}
+                {nameFor(item.offered_by)} now has {item.availableQuantity} of {item.card.name}
+                {item.card.set_name && ` (${item.card.set_name})`}, but{" "}
                 {item.quantity} {item.quantity === 1 ? "was" : "were"} offered.
               </p>
             ))}
@@ -170,19 +173,32 @@ function TradeSide({
   items,
 }: {
   label: string;
-  items: { card: { id: string; name: string }; quantity: number }[];
+  items: TradeWithDetails["items"];
 }) {
   return (
     <div className="flex flex-col gap-2 rounded-xl bg-card p-3 ring-1 ring-border">
       <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
         {label}
       </p>
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-2">
         {items.map((i) => (
-          <span key={i.card.id} className="truncate text-sm font-medium">
-            {i.card.name}
-            {i.quantity > 1 && <span className="text-muted-foreground"> ×{i.quantity}</span>}
-          </span>
+          <div key={i.card.id} className="flex items-center gap-2">
+            <CardThumb name={i.card.name} imageUrl={i.card.image_url} rarity={i.card.rarity} />
+            <div className="flex min-w-0 flex-col gap-0.5">
+              <span className="truncate text-sm font-medium">
+                {i.card.name}
+                {i.quantity > 1 && <span className="text-muted-foreground"> ×{i.quantity}</span>}
+              </span>
+              <div className="flex items-center gap-1.5">
+                <RarityBadge rarity={i.card.rarity} />
+                {i.card.set_name && (
+                  <span className="truncate text-[11px] text-muted-foreground/70">
+                    {i.card.set_name}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
         ))}
       </div>
     </div>

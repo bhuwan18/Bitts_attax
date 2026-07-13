@@ -13,7 +13,7 @@ export const CARDS_PAGE_SIZE = 30;
 
 export type CardListItem = Pick<
   Card,
-  "id" | "name" | "team" | "rarity" | "ovr_rating" | "base_price" | "image_url"
+  "id" | "name" | "team" | "rarity" | "ovr_rating" | "base_price" | "image_url" | "set_name"
 >;
 
 // Server prefetch (app/(main)/cards/page.tsx) and the client useInfiniteQuery
@@ -30,7 +30,7 @@ export async function fetchCardsPage(
 ): Promise<CardListItem[]> {
   let query = supabase
     .from("cards")
-    .select("id, name, team, rarity, ovr_rating, base_price, image_url")
+    .select("id, name, team, rarity, ovr_rating, base_price, image_url, set_name")
     // ovr_rating first (primary sort), then global ownership (owned_count,
     // sum of inventory_items.quantity across all users — see migration
     // 0016_cards_owned_count.sql) as a popularity tiebreak. ovr_rating and

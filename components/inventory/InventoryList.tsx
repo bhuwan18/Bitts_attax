@@ -5,6 +5,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { PackageOpen, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { InventoryItemRow } from "@/components/inventory/InventoryItemRow";
 import { InventoryItemTile } from "@/components/inventory/InventoryItemTile";
 import { InventoryViewToggle, type InventoryView } from "@/components/inventory/InventoryViewToggle";
@@ -28,7 +29,16 @@ export function InventoryList() {
           Add a card
         </Button>
       </Link>
-      {isLoading && <p className="text-sm text-muted-foreground">Loading your collection…</p>}
+      {/* Mirrors the default "grid" view's tile layout so the real cards drop
+          straight into the boxes the skeleton was holding, rather than the page
+          reflowing out from under a line of text. */}
+      {isLoading && (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5">
+          {Array.from({ length: 10 }).map((_, i) => (
+            <Skeleton key={i} className="aspect-[3/4.6] w-full rounded-lg" />
+          ))}
+        </div>
+      )}
       {!isLoading && items?.length === 0 && (
         <div className="flex flex-col items-center gap-2 rounded-xl bg-muted/60 py-10 text-center">
           <PackageOpen className="size-7 text-muted-foreground/60" />

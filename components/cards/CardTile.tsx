@@ -1,13 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import {
-  RARITY_LABEL,
-  RARITY_STYLE,
-  RARITY_BORDER_CLASS,
-  RARITY_GLOW_CLASS,
-  FOIL_RARITIES,
-} from "@/lib/cards/rarity";
+import { RARITY_BORDER_CLASS, RARITY_GLOW_CLASS, FOIL_RARITIES } from "@/lib/cards/rarity";
+import { RarityBadge } from "@/components/cards/RarityBadge";
 import type { CardListItem } from "@/lib/queries/cardsShared";
 
 export function CardTile({ card, priority = false }: { card: CardListItem; priority?: boolean }) {
@@ -51,15 +46,11 @@ export function CardTile({ card, priority = false }: { card: CardListItem; prior
         <div className="flex flex-1 flex-col gap-1.5 p-2.5">
           <p className="truncate text-sm leading-tight font-semibold">{card.name}</p>
           <p className="truncate text-xs text-muted-foreground">{card.team ?? "Free agent"}</p>
+          {card.set_name && (
+            <p className="truncate text-[11px] text-muted-foreground/70">{card.set_name}</p>
+          )}
           <div className="mt-auto flex items-center justify-between gap-1 pt-1.5">
-            <span
-              className={cn(
-                "rounded-full px-2 py-0.5 font-sans text-[10px] font-extrabold tracking-wide uppercase",
-                RARITY_STYLE[card.rarity] ?? RARITY_STYLE.other
-              )}
-            >
-              {RARITY_LABEL[card.rarity] ?? card.rarity}
-            </span>
+            <RarityBadge rarity={card.rarity} />
             {card.base_price != null && (
               <span className="text-xs font-medium text-muted-foreground">
                 ${card.base_price.toFixed(2)}

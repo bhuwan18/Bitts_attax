@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { QuantityStepper } from "@/components/shared/QuantityStepper";
 import { RemoveInventoryItemButton } from "@/components/inventory/RemoveInventoryItemButton";
+import { RarityBadge } from "@/components/cards/RarityBadge";
 import type { InventoryItemWithCard } from "@/lib/queries/inventory";
 
 export function InventoryItemRow({
@@ -35,7 +36,11 @@ export function InventoryItemRow({
       </div>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold">{item.card.name}</p>
-        <p className="truncate text-xs text-muted-foreground">{item.card.team ?? "—"}</p>
+        <p className="truncate text-xs text-muted-foreground">
+          {item.card.team ?? "—"}
+          {item.card.set_name && ` · ${item.card.set_name}`}
+        </p>
+        <RarityBadge rarity={item.card.rarity} className="mt-1" />
       </div>
       <QuantityStepper value={item.quantity} onChange={onUpdateQuantity} />
       <RemoveInventoryItemButton

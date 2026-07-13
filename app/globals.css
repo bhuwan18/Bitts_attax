@@ -191,6 +191,40 @@
     0 0 28px -6px color-mix(in oklch, var(--primary) 32%, transparent);
 }
 
+/* "Still fetching this tab" ping on the pill you just tapped — the same radar
+   ping language as pulse-glow-warning, so a loading nav item reads as part of
+   the same motion vocabulary as the streak flame.
+
+   Starts at opacity 0 and only fades in after 120ms: a prefetched tab commits
+   in well under that, so an instant switch never flashes a loading hint. Per
+   the useLinkStatus docs, the delay is what keeps this from being noise. */
+@keyframes nav-pending-ping {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  30% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.8);
+  }
+}
+@utility nav-pending-ping {
+  opacity: 0;
+  animation: nav-pending-ping 1s var(--ease-out-quint) 120ms infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  /* Still needs to be *visible* — this is the only cue that the tap landed.
+     Hold the ring static instead of animating it out to nothing. */
+  .nav-pending-ping {
+    animation: none;
+    opacity: 0.6;
+    transform: scale(1.35);
+  }
+}
+
 /* Trading-card surface — a subtle diagonal gradient instead of a flat card fill.
    Also the shared hover-intensify hook for every rarity-glow-* tile (see above). */
 @utility card-surface-gradient {
