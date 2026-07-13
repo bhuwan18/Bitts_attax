@@ -2,10 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { QuantityStepper } from "@/components/shared/QuantityStepper";
+import { RemoveInventoryItemButton } from "@/components/inventory/RemoveInventoryItemButton";
 import type { InventoryItemWithCard } from "@/lib/queries/inventory";
 
 export function InventoryItemRow({
@@ -39,15 +38,11 @@ export function InventoryItemRow({
         <p className="truncate text-xs text-muted-foreground">{item.card.team ?? "—"}</p>
       </div>
       <QuantityStepper value={item.quantity} onChange={onUpdateQuantity} />
-      <Button
-        size="icon-sm"
-        variant="ghost"
-        onClick={onRemove}
-        aria-label="Remove from inventory"
+      <RemoveInventoryItemButton
+        cardName={item.card.name}
+        onConfirm={onRemove}
         className="text-muted-foreground hover:text-destructive"
-      >
-        <Trash2 className="size-4" />
-      </Button>
+      />
     </div>
   );
 }

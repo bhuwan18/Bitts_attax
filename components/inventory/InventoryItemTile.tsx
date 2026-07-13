@@ -3,10 +3,11 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { FlipHorizontal2, Trash2 } from "lucide-react";
+import { FlipHorizontal2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { QuantityStepper } from "@/components/shared/QuantityStepper";
+import { RemoveInventoryItemButton } from "@/components/inventory/RemoveInventoryItemButton";
 import { cn } from "@/lib/utils";
 import { RARITY_BORDER_CLASS, RARITY_GLOW_CLASS } from "@/lib/cards/rarity";
 import type { InventoryItemWithCard } from "@/lib/queries/inventory";
@@ -72,15 +73,11 @@ export function InventoryItemTile({
             {flipped ? "Stock image" : "Your photo"}
           </Badge>
         )}
-        <Button
-          size="icon-sm"
-          variant="ghost"
-          onClick={onRemove}
-          aria-label="Remove from inventory"
+        <RemoveInventoryItemButton
+          cardName={item.card.name}
+          onConfirm={onRemove}
           className="absolute top-1 left-1 bg-background/80 text-muted-foreground backdrop-blur-sm hover:text-destructive"
-        >
-          <Trash2 className="size-4" />
-        </Button>
+        />
         {hasBothImages && (
           <Button
             size="icon-sm"
