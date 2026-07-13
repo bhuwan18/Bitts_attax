@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,7 +22,9 @@ export function InventoryItemRow({
   return (
     <div className="flex items-center gap-3 rounded-xl bg-card p-2 ring-1 ring-border">
       <div className="relative size-14 shrink-0 overflow-hidden rounded-lg bg-muted">
-        {imageUrl && <Image src={imageUrl} alt={item.card.name} fill className="object-cover" />}
+        <Link href={`/cards/${item.card.id}`} className="absolute inset-0" aria-label={`View ${item.card.name}`}>
+          {imageUrl && <Image src={imageUrl} alt={item.card.name} fill className="object-cover" />}
+        </Link>
         {item.custom_image_url && (
           <Badge
             variant="secondary"

@@ -266,6 +266,40 @@
   }
 }
 
+/* Trading-card flip — reveals the catalog's stock image on the back of a
+   user's own uploaded photo (InventoryItemTile). `perspective` on the scene
+   gives the rotation real depth instead of a flat horizontal squash;
+   backface-hidden faces keep the mirrored back face from bleeding through
+   mid-flip. data-flipped mirrors this codebase's existing data-open/
+   data-closed attribute-driven styling convention (see components/ui/dialog.tsx). */
+@utility flip-card-scene {
+  perspective: 1200px;
+}
+@utility flip-card-inner {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.5s var(--ease-out-quint, cubic-bezier(0.22, 1, 0.36, 1));
+}
+.flip-card-inner[data-flipped="true"] {
+  transform: rotateY(180deg);
+}
+@utility flip-card-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+}
+@utility flip-card-face-back {
+  transform: rotateY(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flip-card-inner {
+    transition: none;
+  }
+}
+
 /* Radar-ping ambient pulse for the streak flame — a spreading, fading ring
    rather than a glow-intensity pulse, so it reads as "alive" without
    fighting the rarity-glow language used on cards. */

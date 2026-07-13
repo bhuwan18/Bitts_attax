@@ -57,11 +57,37 @@ function orderCorners(points: Point[]): [Point, Point, Point, Point] {
   ];
 }
 
-// Finds the largest 4-corner contour that plausibly is the photographed
-// card: edge-detect, trace contours, keep the biggest one that approximates
-// to a quadrilateral and covers a meaningful (but not near-total) share of
-// the frame. Returns null — never throws — when nothing confident is found,
-// so the caller can fall back to a plain center crop.
+// cv.minAreaRect() returns {center: {x,y}, size: {width,height}, angle} (an
+// embind conversion of cv::RotatedRect) — computed here rather than via
+// cv.boxPoints (whose exact binding shape is unverified for this build) so
+// this has no dependency beyond minAreaRect's well-documented return shape.
+function rotatedRectToCorners(rect: { center: Point; size: { width: number; height: number }; angle: number }): Point[] {
+  const theta = (rect.angle * Math.PI) / 180;
+  const cos = Math.cos(theta);
+  const sin = Math.sin(theta);
+  const halfW = rect.size.width / 2;
+  const halfH = rect.size.height / 2;
+  return [
+    { x: -halfW, y: -halfH },
+    { x: halfW, y: -halfH },
+    { x: halfW, y: halfH },
+    { x: -halfW, y: halfH },
+  ].map((o) => ({
+    x: rect.center.x + o.x * cos - o.y * sin,
+    y: rect.center.y + o.x * sin + o.y * cos,
+  }));
+}
+
+// Finds the largest contour that plausibly is the photographed card and
+// returns its four corners via a rotated bounding rectangle. Deliberately
+// does NOT require the contour to approximate to an exact 4-vertex polygon —
+// physical trading cards have rounded corners, which routinely make a strict
+// polygon approximation produce 5+ vertices and get rejected, even though
+// the contour is clearly a card. minAreaRect fits a rotated rectangle around
+// the contour regardless of its exact vertex count, which handles rounded
+// corners (and general contour noise) far more reliably. Returns null —
+// never throws — when nothing confident is found, so the caller can fall
+// back to a plain center crop.
 function detectCardCorners(cv: CV, image: HTMLImageElement): [Point, Point, Point, Point] | null {
   const src = cv.imread(image);
   const gray = new cv.Mat();
@@ -70,6 +96,7 @@ function detectCardCorners(cv: CV, image: HTMLImageElement): [Point, Point, Poin
   const kernel = cv.Mat.ones(3, 3, cv.CV_8U);
   const contours = new cv.MatVector();
   const hierarchy = new cv.Mat();
+  let bestContour: CV | null = null;
 
   try {
     cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
@@ -79,33 +106,27 @@ function detectCardCorners(cv: CV, image: HTMLImageElement): [Point, Point, Poin
     cv.findContours(edged, contours, hierarchy, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE);
 
     const imageArea = src.rows * src.cols;
-    let best: Point[] | null = null;
     let bestArea = 0;
 
     for (let i = 0; i < contours.size(); i++) {
       const contour = contours.get(i);
-      const approx = new cv.Mat();
-      cv.approxPolyDP(contour, approx, 0.02 * cv.arcLength(contour, true), true);
-
-      if (approx.rows === 4) {
-        const area = Math.abs(cv.contourArea(approx));
-        // A real card fills most of a close-up photo but rarely the whole
-        // frame — that usually means we traced the photo's own border.
-        if (area > imageArea * 0.15 && area < imageArea * 0.98 && area > bestArea) {
-          bestArea = area;
-          const points: Point[] = [];
-          for (let j = 0; j < 4; j++) {
-            points.push({ x: approx.data32S[j * 2], y: approx.data32S[j * 2 + 1] });
-          }
-          best = points;
-        }
+      const area = cv.contourArea(contour);
+      // A real card fills most of a close-up photo but rarely the whole
+      // frame — that usually means we traced the photo's own border.
+      if (area > imageArea * 0.15 && area < imageArea * 0.98 && area > bestArea) {
+        bestArea = area;
+        bestContour?.delete();
+        bestContour = contour;
+      } else {
+        contour.delete();
       }
-      approx.delete();
-      contour.delete();
     }
 
-    return best ? orderCorners(best) : null;
+    if (!bestContour) return null;
+    const rotatedRect = cv.minAreaRect(bestContour);
+    return orderCorners(rotatedRectToCorners(rotatedRect)) as [Point, Point, Point, Point];
   } finally {
+    bestContour?.delete();
     src.delete();
     gray.delete();
     blurred.delete();

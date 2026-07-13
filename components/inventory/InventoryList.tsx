@@ -16,7 +16,7 @@ import {
 } from "@/lib/queries/inventory";
 
 export function InventoryList() {
-  const [view, setView] = useState<InventoryView>("list");
+  const [view, setView] = useState<InventoryView>("grid");
   const { data: items, isLoading } = useInventory();
   const addMutation = useAddToInventory();
   const updateMutation = useUpdateInventoryQuantity();
