@@ -18,6 +18,24 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "10mb",
     },
   },
+  // @techstark/opencv-js (the auto-crop perspective correction in
+  // lib/cards/perspectiveCrop.ts, dynamically imported client-side only)
+  // conditionally requires Node builtins in its UMD wrapper for its
+  // Node-environment branch, which webpack still tries to resolve when
+  // bundling for the browser. Per the package's own README, these need to
+  // resolve to nothing in the client bundle; scoped to !isServer so the
+  // actual server bundle (which never imports this package) is unaffected.
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        path: false,
+        crypto: false,
+      };
+    }
+    return config;
+  },
 };
 
 const withSerwist = withSerwistInit({

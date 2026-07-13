@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   computeMatchedOn,
   normalizeExtraction,
+  normalizeVisualMatch,
+  promoteCandidate,
   shouldSearchCatalog,
   type CardExtraction,
 } from "./photoExtraction";
@@ -98,5 +100,40 @@ describe("computeMatchedOn", () => {
       confidence: "high",
     };
     expect(computeMatchedOn(card, extraction)).toEqual(["name"]);
+  });
+});
+
+describe("normalizeVisualMatch", () => {
+  it("parses a valid response", () => {
+    expect(normalizeVisualMatch({ bestMatchNumber: 3, confidence: "high" })).toEqual({
+      bestMatchNumber: 3,
+      confidence: "high",
+    });
+  });
+
+  it("returns null for malformed input", () => {
+    expect(normalizeVisualMatch({ bestMatchNumber: "3" })).toBeNull();
+    expect(normalizeVisualMatch(null)).toBeNull();
+    expect(normalizeVisualMatch({ confidence: "high" })).toBeNull();
+  });
+});
+
+describe("promoteCandidate", () => {
+  const candidates = [{ id: "a" }, { id: "b" }, { id: "c" }];
+
+  it("moves the matching id to the front, preserving the rest's order", () => {
+    expect(promoteCandidate(candidates, "b")).toEqual([{ id: "b" }, { id: "a" }, { id: "c" }]);
+  });
+
+  it("is a no-op when the winner is already first", () => {
+    expect(promoteCandidate(candidates, "a")).toEqual(candidates);
+  });
+
+  it("returns the original order unchanged when winnerId is null", () => {
+    expect(promoteCandidate(candidates, null)).toEqual(candidates);
+  });
+
+  it("returns the original order unchanged when winnerId isn't found", () => {
+    expect(promoteCandidate(candidates, "nonexistent")).toEqual(candidates);
   });
 });

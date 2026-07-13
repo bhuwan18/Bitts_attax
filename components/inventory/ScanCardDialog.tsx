@@ -3,7 +3,6 @@
 import { useRef, useState } from "react";
 import Image from "next/image";
 import { toast } from "sonner";
-import Cropper, { type Area } from "react-easy-crop";
 import { Camera, Check, ImageUp, Loader2, ScanLine, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,7 +23,7 @@ import {
   RARITY_LABEL,
   RARITY_STYLE,
 } from "@/lib/cards/rarity";
-import { getCroppedImageFile } from "@/lib/cards/cropImage";
+import { getAutoCroppedImageFile } from "@/lib/cards/perspectiveCrop";
 import { MAX_IMAGE_BYTES } from "@/lib/validation/image.schema";
 import { useAddToInventory } from "@/lib/queries/inventory";
 import { useScanCardPhoto } from "@/lib/queries/photoMatch";
@@ -40,14 +39,10 @@ const STATUS_MESSAGE: Record<Exclude<PhotoScanStatus, "matched">, string> = {
 const SIGNAL_LABEL: Record<string, string> = {
   team: "Team match",
   setName: "Set match",
+  visual: "Best visual match",
 };
 
-// Every card image in this app displays at aspect-[3/4] (CardTile,
-// InventoryItemTile, AddToInventoryDialog) — locking the crop to the same
-// ratio means the stored photo is never re-cropped/stretched at display time.
-const CROP_ASPECT = 3 / 4;
-
-type Step = "pick" | "crop" | "review" | "loading" | "results" | "manual";
+type Step = "pick" | "preparing" | "review" | "loading" | "results" | "manual";
 
 function croppedFileName(sourceFile: File) {
   return `${sourceFile.name.replace(/\.[^./\\]+$/, "")}-cropped.jpg`;
@@ -57,16 +52,8 @@ export function ScanCardDialog() {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<Step>("pick");
 
-  // The raw, uncropped photo — only used as the Cropper's source image.
-  const [sourceFile, setSourceFile] = useState<File | null>(null);
-  const [sourcePreviewUrl, setSourcePreviewUrl] = useState<string | null>(null);
-  const [crop, setCrop] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
-  const [isCropping, setIsCropping] = useState(false);
-
-  // The final cropped photo — what gets scanned and, on confirm, uploaded as
-  // the inventory row's custom_image_url.
+  // The final, auto-cropped photo — what gets scanned and, on confirm,
+  // uploaded as the inventory row's custom_image_url.
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
@@ -79,19 +66,11 @@ export function ScanCardDialog() {
   const addMutation = useAddToInventory();
 
   function resetAll() {
-    setSourceFile(null);
-    setSourcePreviewUrl((prev) => {
-      if (prev) URL.revokeObjectURL(prev);
-      return null;
-    });
     setFile(null);
     setPreviewUrl((prev) => {
       if (prev) URL.revokeObjectURL(prev);
       return null;
     });
-    setCrop({ x: 0, y: 0 });
-    setZoom(1);
-    setCroppedAreaPixels(null);
     setStep("pick");
     setQuantity(1);
     setSelectedCardId(null);
@@ -105,32 +84,20 @@ export function ScanCardDialog() {
     if (!nextOpen) resetAll();
   }
 
-  function handleFileSelect(selected: File | null) {
+  // No manual crop UI — the photo is auto-cropped the instant it's picked:
+  // detect the card's four corners (however skewed by camera angle) and
+  // perspective-warp them flat, falling back to a plain center crop if no
+  // confident corners are found (see lib/cards/perspectiveCrop.ts). The user
+  // just sees the ready-to-scan result.
+  async function handleFileSelect(selected: File | null) {
     if (!selected) return;
     if (selected.size > MAX_IMAGE_BYTES) {
       toast.error("Image must be 8MB or smaller.");
       return;
     }
-    setSourceFile(selected);
-    setSourcePreviewUrl((prev) => {
-      if (prev) URL.revokeObjectURL(prev);
-      return URL.createObjectURL(selected);
-    });
-    setCrop({ x: 0, y: 0 });
-    setZoom(1);
-    setCroppedAreaPixels(null);
-    setStep("crop");
-  }
-
-  async function handleConfirmCrop() {
-    if (!sourceFile || !sourcePreviewUrl || !croppedAreaPixels) return;
-    setIsCropping(true);
+    setStep("preparing");
     try {
-      const cropped = await getCroppedImageFile(
-        sourcePreviewUrl,
-        croppedAreaPixels,
-        croppedFileName(sourceFile)
-      );
+      const cropped = await getAutoCroppedImageFile(selected, croppedFileName(selected));
       setFile(cropped);
       setPreviewUrl((prev) => {
         if (prev) URL.revokeObjectURL(prev);
@@ -138,9 +105,8 @@ export function ScanCardDialog() {
       });
       setStep("review");
     } catch {
-      toast.error("Could not crop that photo — try again.");
-    } finally {
-      setIsCropping(false);
+      toast.error("Could not process that photo — try again.");
+      setStep("pick");
     }
   }
 
@@ -187,10 +153,16 @@ export function ScanCardDialog() {
           </DialogDescription>
         </DialogHeader>
 
-        {step === "pick" && (
+        {(step === "pick" || step === "preparing") && (
           <div className="flex flex-col gap-3">
             <div className="flex flex-wrap justify-center gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={step === "preparing"}
+                onClick={() => fileInputRef.current?.click()}
+              >
                 <ImageUp className="size-4" />
                 Upload photo
               </Button>
@@ -198,13 +170,26 @@ export function ScanCardDialog() {
                 type="button"
                 variant="outline"
                 size="sm"
+                disabled={step === "preparing"}
                 onClick={() => cameraInputRef.current?.click()}
               >
                 <Camera className="size-4" />
                 Take photo
               </Button>
             </div>
-            <Button type="button" variant="ghost" size="sm" onClick={() => setStep("manual")}>
+            {step === "preparing" && (
+              <p className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="size-4 animate-spin" />
+                Preparing your photo…
+              </p>
+            )}
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              disabled={step === "preparing"}
+              onClick={() => setStep("manual")}
+            >
               <Search className="size-4" />
               Search manually instead
             </Button>
@@ -224,41 +209,6 @@ export function ScanCardDialog() {
               className="hidden"
               onChange={(e) => handleFileSelect(e.target.files?.[0] ?? null)}
             />
-          </div>
-        )}
-
-        {step === "crop" && sourcePreviewUrl && (
-          <div className="flex flex-col gap-3">
-            <div className="relative h-72 w-full overflow-hidden rounded-lg bg-muted">
-              <Cropper
-                image={sourcePreviewUrl}
-                crop={crop}
-                zoom={zoom}
-                aspect={CROP_ASPECT}
-                onCropChange={setCrop}
-                onZoomChange={setZoom}
-                onCropComplete={(_area, pixels) => setCroppedAreaPixels(pixels)}
-              />
-            </div>
-            <input
-              type="range"
-              min={1}
-              max={3}
-              step={0.05}
-              value={zoom}
-              onChange={(e) => setZoom(Number(e.target.value))}
-              className="w-full accent-primary"
-              aria-label="Zoom"
-            />
-            <div className="flex justify-center gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={resetAll}>
-                Cancel
-              </Button>
-              <Button type="button" size="sm" onClick={handleConfirmCrop} disabled={isCropping}>
-                {isCropping ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
-                Crop photo
-              </Button>
-            </div>
           </div>
         )}
 
