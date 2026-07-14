@@ -118,11 +118,14 @@ Used by: `app/(main)/notifications/page.tsx` (the inbox).
 
 | Component | Purpose |
 |---|---|
-| `ChatInterface.tsx` | Composes `useMessages` (initial fetch) + `useTradeChannel` (Realtime) + message list + `MessageInput`, auto-scrolls to newest message |
+| `ChatInterface.tsx` | Composes `useMessages` (initial fetch) + `useTradeChannel` (Realtime) + message list + `MessageInput`, auto-scrolls its own message list to the newest message |
 | `MessageBubble.tsx` | One message, left/right-aligned by sender, shows sender name for the counterparty's messages |
 | `MessageInput.tsx` | Auto-growing textarea + send button, Enter-to-send (Shift+Enter for newline) |
 
-Used by: `app/(main)/trades/[tradeId]/chat/page.tsx`.
+Used by: `app/(main)/trades/[tradeId]/page.tsx`, which embeds the chat inline as a fixed-height,
+internally-scrolling panel (`#chat`) below the trade terms — there is no separate chat screen.
+`ChatInterface` scrolls its own message list rather than calling `scrollIntoView`, which would drag
+the whole trade page down to the chat on load.
 
 ## Admin (`components/admin/`)
 

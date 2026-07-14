@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ArrowLeftRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -12,11 +14,18 @@ import type { TradeListingWithDetails } from "@/lib/queries/trades";
 export function TradeListingCard({
   listing,
   currentUserId,
+  existingTradeId,
 }: {
   listing: TradeListingWithDetails;
   currentUserId: string | null;
+  // The caller's own live trade against this listing, if any — one open
+  // proposal per listing is enforced by trades_one_open_proposal_per_listing
+  // (0021), so offer the existing one rather than a duplicate the database
+  // would reject.
+  existingTradeId?: string | null;
 }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [proposing, setProposing] = useState(false);
 
   const haves = listing.items.filter((i) => i.side === "have");
@@ -34,16 +43,23 @@ export function TradeListingCard({
         myItems: wants.map((w) => ({ cardId: w.card.id, quantity: w.quantity })),
         theirItems: haves.map((h) => ({ cardId: h.card.id, quantity: h.quantity })),
       });
+      // Without this, coming back to Browse would still show a live "Propose
+      // trade" button on the listing just proposed on.
+      await queryClient.invalidateQueries({ queryKey: ["myOpenListingProposals"] });
       router.push(`/trades/${tradeId}`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to propose trade.");
+      // The duplicate this rejected is one the client thought it could make, so
+      // its picture of the caller's open proposals is stale — refresh it and the
+      // button becomes "View your proposal".
+      queryClient.invalidateQueries({ queryKey: ["myOpenListingProposals"] });
     } finally {
       setProposing(false);
     }
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl bg-card p-4 ring-1 ring-border transition-all duration-300 ease-[var(--ease-out-quint)] hover:-translate-y-0.5 hover:ring-foreground/20">
+    <div className="flex flex-col gap-3 rounded-xl bg-card p-4 ring-1 ring-border transition-all duration-300 ease-[var(--ease-out-quint)] hover:ring-foreground/20 motion-safe:hover:-translate-y-0.5">
       <p className="font-heading text-base">
         {listing.title || `${listing.owner?.display_name ?? listing.owner?.username}'s listing`}
       </p>
@@ -52,11 +68,21 @@ export function TradeListingCard({
         <ArrowLeftRight className="mt-4 size-4 shrink-0 text-muted-foreground" />
         <ItemGroup label="Looking for" tone="primary" items={wants} />
       </div>
-      {!isOwnListing && (
-        <Button size="sm" disabled={proposing} onClick={handlePropose} className="mt-1 w-fit">
-          {proposing ? "Proposing…" : "Propose trade"}
-        </Button>
-      )}
+      {!isOwnListing &&
+        (existingTradeId ? (
+          <Button
+            size="sm"
+            variant="outline"
+            render={<Link href={`/trades/${existingTradeId}`} />}
+            className="mt-1 w-fit"
+          >
+            View your proposal
+          </Button>
+        ) : (
+          <Button size="sm" disabled={proposing} onClick={handlePropose} className="mt-1 w-fit">
+            {proposing ? "Proposing…" : "Propose trade"}
+          </Button>
+        ))}
     </div>
   );
 }

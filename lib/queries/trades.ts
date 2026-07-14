@@ -176,6 +176,37 @@ export function useMyTrades() {
   });
 }
 
+// Listing id -> the caller's own still-live trade against it.
+//
+// Browse uses this to point at the proposal you already made instead of
+// offering a second one that trades_one_open_proposal_per_listing (0021) would
+// reject anyway — the constraint is what actually enforces the rule, this is
+// what keeps you from walking into it. Deliberately narrow (two columns, no
+// nested card embeds) since all it feeds is a button's label and href.
+//
+// Shares OPEN_TRADE_STATUSES with the index's WHERE clause so the two agree on
+// what "live" means: a rejected or cancelled trade frees the listing up again.
+export function useMyOpenListingProposals() {
+  const supabase = useSupabase();
+  const { data: user } = useCurrentUser();
+
+  return useQuery({
+    queryKey: ["myOpenListingProposals", user?.id],
+    queryFn: async (): Promise<Map<string, string>> => {
+      const { data, error } = await supabase
+        .from("trades")
+        .select("id, listing_id")
+        .eq("initiator_id", user!.id)
+        .in("status", [...OPEN_TRADE_STATUSES])
+        .not("listing_id", "is", null);
+
+      if (error) throw error;
+      return new Map((data ?? []).map((t) => [t.listing_id as string, t.id as string]));
+    },
+    enabled: !!user,
+  });
+}
+
 // The one thing the Home hero needs to know about trades: is someone waiting on
 // a reply from me?
 //

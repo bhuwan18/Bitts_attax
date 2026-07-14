@@ -98,6 +98,17 @@ export async function proposeTrade(input: z.infer<typeof ProposeTradeSchema>) {
     .select("id")
     .single();
 
+  // 23505 here is trades_one_open_proposal_per_listing (0021): this user already
+  // has a live proposal against this listing. The constraint is the guard rather
+  // than a select-then-insert check, since only it survives two concurrent
+  // proposals racing — so this branch is a real path, not just belt-and-braces,
+  // and it needs to read as a rule rather than as a database error.
+  if (tradeError?.code === "23505") {
+    throw new Error(
+      "You already have an open proposal on this listing — see it under My Trades."
+    );
+  }
+
   if (tradeError || !trade) throw new Error(tradeError?.message ?? "Failed to create trade.");
 
   const items = [

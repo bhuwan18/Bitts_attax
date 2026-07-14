@@ -3,7 +3,7 @@
 import { Repeat } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCurrentUser } from "@/lib/queries/auth";
-import { useTradeListings } from "@/lib/queries/trades";
+import { useMyOpenListingProposals, useTradeListings } from "@/lib/queries/trades";
 import { TradeListingCard } from "@/components/trades/TradeListingCard";
 
 function TradeBrowseSkeleton() {
@@ -35,6 +35,11 @@ export function TradeBrowseList() {
   // is what forced app/(main)/trades/page.tsx to be a dynamic Server Component.
   const { data: user } = useCurrentUser();
   const { data: listings, isLoading } = useTradeListings();
+  // Not awaited before rendering — a listing you've already proposed on is the
+  // exception, so blocking the whole list on this would trade a slower Browse
+  // for a rarely-needed label. Until it lands the card shows "Propose trade",
+  // and the constraint still catches a duplicate if you beat it.
+  const { data: myProposals } = useMyOpenListingProposals();
 
   if (isLoading) return <TradeBrowseSkeleton />;
 
@@ -60,7 +65,11 @@ export function TradeBrowseList() {
           style={{ animationDelay: `${(i % 10) * 35}ms` }}
           className="animate-in fade-in-0 slide-in-from-bottom-4 fill-mode-both animation-duration-400"
         >
-          <TradeListingCard listing={listing} currentUserId={user?.id ?? null} />
+          <TradeListingCard
+            listing={listing}
+            currentUserId={user?.id ?? null}
+            existingTradeId={myProposals?.get(listing.id) ?? null}
+          />
         </div>
       ))}
     </div>

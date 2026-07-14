@@ -1,11 +1,11 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
-import Link from "next/link";
 import { MessageCircle, Check, X, CheckCheck, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { ChatInterface } from "@/components/chat/ChatInterface";
 import { FairnessMeter } from "@/components/trades/FairnessMeter";
 import { RarityBadge } from "@/components/cards/RarityBadge";
 import { CardThumb } from "@/components/cards/CardThumb";
@@ -160,10 +160,16 @@ export default function TradeDetailPage({ params }: { params: Promise<{ tradeId:
         </p>
       )}
 
-      <Button variant="secondary" render={<Link href={`/trades/${tradeId}/chat`} />}>
-        <MessageCircle className="size-4" />
-        Open chat
-      </Button>
+      <section
+        id="chat"
+        className="flex h-[28rem] max-h-[65vh] min-h-0 scroll-mt-4 flex-col overflow-hidden rounded-xl bg-card ring-1 ring-border"
+      >
+        <div className="flex items-center gap-2 border-b border-border px-3 py-2.5">
+          <MessageCircle className="size-4 text-muted-foreground" />
+          <h2 className="font-sans text-sm font-extrabold tracking-wide uppercase">Chat</h2>
+        </div>
+        <ChatInterface tradeId={tradeId} />
+      </section>
     </div>
   );
 }

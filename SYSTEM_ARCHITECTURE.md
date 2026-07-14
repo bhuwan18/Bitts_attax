@@ -113,6 +113,6 @@ flowchart TB
 4. The trade detail page (`/trades/[tradeId]`) calls `computeAndPersistFairness`, which loads the
    trade's items, the active `fairness_rules` row, runs the pure `computeFairnessScore` function,
    and persists the result onto `trades.fairness_score` / `fairness_breakdown`.
-5. Either party opens `/trades/[tradeId]/chat` to negotiate over Realtime chat while the trade sits
-   in `proposed` status; the counterparty accepts or rejects via `updateTradeStatus`, which fires
-   the same trigger to notify the initiator of the outcome.
+5. Either party negotiates over Realtime chat — embedded inline on the trade detail page, not a
+   separate route — while the trade sits in `proposed` status; the counterparty accepts or rejects
+   via `updateTradeStatus`, which fires the same trigger to notify the initiator of the outcome.

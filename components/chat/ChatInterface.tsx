@@ -13,15 +13,25 @@ export function ChatInterface({ tradeId }: { tradeId: string }) {
   const { data: currentUser } = useCurrentUser();
   useTradeChannel(tradeId);
 
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const hasRenderedRef = useRef(false);
 
+  // Scroll the message list itself rather than scrollIntoView-ing a bottom
+  // anchor: this sits inline on the trade page, and scrollIntoView would drag
+  // the whole page down past the trade terms. Jump on first paint, animate after.
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const list = scrollRef.current;
+    if (!list) return;
+    list.scrollTo({
+      top: list.scrollHeight,
+      behavior: hasRenderedRef.current ? "smooth" : "instant",
+    });
+    hasRenderedRef.current = true;
   }, [messages?.length]);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col bg-background">
-      <div className="flex-1 overflow-y-auto p-3">
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto p-3">
         <div className="flex flex-col gap-3">
           {isLoading && <p className="text-sm text-muted-foreground">Loading messages…</p>}
           {!isLoading && messages?.length === 0 && (
@@ -39,7 +49,6 @@ export function ChatInterface({ tradeId }: { tradeId: string }) {
               isOwn={message.sender_id === currentUser?.id}
             />
           ))}
-          <div ref={bottomRef} />
         </div>
       </div>
       <MessageInput tradeId={tradeId} />
