@@ -304,20 +304,35 @@
    user's own uploaded photo (InventoryItemTile). `perspective` on the scene
    gives the rotation real depth instead of a flat horizontal squash;
    backface-hidden faces keep the mirrored back face from bleeding through
-   mid-flip. data-flipped mirrors this codebase's existing data-open/
-   data-closed attribute-driven styling convention (see components/ui/dialog.tsx). */
+   mid-flip.
+
+   The angle is not a CSS transition between two states: lib/hooks/useCardFlip.ts
+   writes --flip-angle and --flip-tilt onto the scene every frame, so a swipe
+   tracks the thumb 1:1 and the release carries the flick's momentum into a
+   spring. Reduced motion is handled there too (the hook snaps instead of
+   springing), which is why there's no prefers-reduced-motion rule here. */
 @utility flip-card-scene {
   perspective: 1200px;
+}
+@utility flip-card-swipeable {
+  /* pan-y leaves vertical scrolling with the browser while horizontal pans reach
+     our pointer handlers instead of being swallowed by the scroller. */
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+}
+.flip-card-swipeable[data-dragging="true"] {
+  cursor: grabbing;
 }
 @utility flip-card-inner {
   position: relative;
   height: 100%;
   width: 100%;
   transform-style: preserve-3d;
-  transition: transform 0.5s var(--ease-out-quint, cubic-bezier(0.22, 1, 0.36, 1));
-}
-.flip-card-inner[data-flipped="true"] {
-  transform: rotateY(180deg);
+  /* The dip in scale as the card turns edge-on sells it as a physical object
+     passing through the plane rather than a texture being swapped. */
+  transform: rotateY(var(--flip-angle, 0deg)) scale(calc(1 - var(--flip-tilt, 0) * 0.06));
 }
 @utility flip-card-face {
   position: absolute;
@@ -327,11 +342,19 @@
 @utility flip-card-face-back {
   transform: rotateY(180deg);
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .flip-card-inner {
-    transition: none;
-  }
+/* Specular glint at the halfway point. It sits outside the rotating inner, so it
+   reads as light catching the scene rather than as a mark on either face. */
+@utility flip-card-sheen {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: calc(var(--flip-tilt, 0) * 0.4);
+  background: linear-gradient(
+    105deg,
+    transparent 30%,
+    oklch(1 0 0 / 0.5) 50%,
+    transparent 70%
+  );
 }
 
 /* Radar-ping ambient pulse for the streak flame — a spreading, fading ring
