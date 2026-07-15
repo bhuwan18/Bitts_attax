@@ -126,6 +126,8 @@ export function BottomNav() {
               <Link
                 key={href}
                 href={href}
+                // Anchor for the home tour's closing "head to Trades" step.
+                data-tour={href === "/trades" ? "nav-trades" : undefined}
                 aria-current={active ? "page" : undefined}
                 aria-busy={pending || undefined}
                 onClick={(event) => {

@@ -62,6 +62,9 @@ export function TradeBrowseList() {
       {listings.map((listing, i) => (
         <div
           key={listing.id}
+          // The tour spotlights the first card as its "anatomy of a listing"
+          // example; falls back to a centered step when there are no listings.
+          data-tour={i === 0 ? "trades-listing-card" : undefined}
           style={{ animationDelay: `${(i % 10) * 35}ms` }}
           className="animate-in fade-in-0 slide-in-from-bottom-4 fill-mode-both animation-duration-400"
         >

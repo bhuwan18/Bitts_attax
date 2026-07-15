@@ -70,6 +70,7 @@ export function HeroCta() {
 
   return (
     <section
+      data-tour="home-hero"
       className={cn(
         SHELL,
         "animate-in fade-in-0 slide-in-from-bottom-4 fill-mode-both animation-duration-500 flex flex-wrap items-center gap-4 border border-primary/30 bg-primary/10 p-4"

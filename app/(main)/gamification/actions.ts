@@ -14,6 +14,8 @@ async function requireUser() {
   return { supabase, user };
 }
 
+type AuthedContext = Awaited<ReturnType<typeof requireUser>>;
+
 // YYYY-MM-DD, not a future date, not implausibly old — guards against a
 // wildly wrong client clock without needing perfect validation for what's a
 // cosmetic feature. The date is client-supplied (rather than computed here
@@ -44,7 +46,11 @@ export async function recordDailyActivity(localDate: string) {
     );
   if (error) throw new Error(error.message);
 
-  return evaluateAchievements();
+  // Reuse the client/user we already authenticated above instead of letting
+  // evaluateAchievements() run auth.getUser() a second time — this action fires
+  // on every home-page mount (ActivityRecorder), so that second round-trip to
+  // the Supabase auth server was pure latency on the critical path.
+  return evaluateAchievementsFor({ supabase, user });
 }
 
 // Diffs real counts (completed trades, rarity ownership, streak) against the
@@ -53,8 +59,15 @@ export async function recordDailyActivity(localDate: string) {
 // recorded) plus once on Profile mount as a safety net — see
 // components/profile/AchievementEvaluator.tsx.
 export async function evaluateAchievements() {
-  const { supabase, user } = await requireUser();
+  return evaluateAchievementsFor(await requireUser());
+}
 
+// Internal (deliberately NOT exported / not a "use server" endpoint): callers
+// must have already authenticated via requireUser() and pass that context in.
+// Keeping it unexported means a client can never reach it directly with a
+// forged identity — only the self-authenticating evaluateAchievements() and
+// recordDailyActivity() Server Actions above can invoke it.
+async function evaluateAchievementsFor({ supabase, user }: AuthedContext) {
   const [tradesResult, inventoryResult, activityResult, unlockedResult] = await Promise.all([
     supabase
       .from("trades")

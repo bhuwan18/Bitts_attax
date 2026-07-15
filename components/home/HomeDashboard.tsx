@@ -21,14 +21,16 @@ export function HomeDashboard() {
   return (
     <div className="flex flex-col gap-7 p-4 sm:p-6">
       <HeroCta />
-      <StatStrip
-        size="lg"
-        items={[
-          { label: "Unique cards", value: inventoryCount ?? 0, accent: "text-primary" },
-          { label: "On wishlist", value: wantListCount ?? 0, accent: "text-warning" },
-          { label: "Trade matches", value: matches?.length ?? 0, accent: "text-brand" },
-        ]}
-      />
+      <div data-tour="home-stats">
+        <StatStrip
+          size="lg"
+          items={[
+            { label: "Unique cards", value: inventoryCount ?? 0, accent: "text-primary" },
+            { label: "On wishlist", value: wantListCount ?? 0, accent: "text-warning" },
+            { label: "Trade matches", value: matches?.length ?? 0, accent: "text-brand" },
+          ]}
+        />
+      </div>
       <StreakBanner />
       <TradeMatchesWidget />
       <RecentCardsRail />

@@ -15,6 +15,8 @@ import { computeAndPersistFairness } from "./fairness-actions";
 import { updateTradeStatus, confirmTradeCompletion } from "@/app/(main)/trades/actions";
 import { TRADE_STATUS_STYLE } from "@/lib/trades/status";
 import type { FairnessResult } from "@/lib/fairness";
+import { HelpButton } from "@/components/tour/HelpButton";
+import { TourAutoStart } from "@/components/tour/TourAutoStart";
 
 export default function TradeDetailPage({ params }: { params: Promise<{ tradeId: string }> }) {
   const { tradeId } = use(params);
@@ -82,8 +84,12 @@ export default function TradeDetailPage({ params }: { params: Promise<{ tradeId:
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-5 p-4 sm:p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="font-heading text-3xl tracking-tight">Trade</h1>
+      <TourAutoStart tourId="trade-detail" />
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1">
+          <h1 className="font-heading text-3xl tracking-tight">Trade</h1>
+          <HelpButton tourId="trade-detail" label="Explain this trade page" />
+        </div>
         <span
           className={cn(
             "rounded-full px-2.5 py-1 font-sans text-xs font-extrabold tracking-wide uppercase",
@@ -111,14 +117,16 @@ export default function TradeDetailPage({ params }: { params: Promise<{ tradeId:
       )}
 
       {fairness && (
-        <FairnessMeter
-          result={fairness}
-          sideALabel={trade.initiator?.display_name ?? trade.initiator?.username ?? "Side A"}
-          sideBLabel={trade.counterparty?.display_name ?? trade.counterparty?.username ?? "Side B"}
-        />
+        <div data-tour="trade-fairness">
+          <FairnessMeter
+            result={fairness}
+            sideALabel={trade.initiator?.display_name ?? trade.initiator?.username ?? "Side A"}
+            sideBLabel={trade.counterparty?.display_name ?? trade.counterparty?.username ?? "Side B"}
+          />
+        </div>
       )}
 
-      <div className="grid grid-cols-2 gap-3">
+      <div data-tour="trade-sides" className="grid grid-cols-2 gap-3">
         <TradeSide
           label={`${trade.initiator?.display_name ?? trade.initiator?.username} gives`}
           items={myGive}
@@ -130,7 +138,7 @@ export default function TradeDetailPage({ params }: { params: Promise<{ tradeId:
       </div>
 
       {canRespond && (
-        <div className="flex gap-2">
+        <div data-tour="trade-actions" className="flex gap-2">
           <Button disabled={updating} onClick={() => respond("accepted")} className="flex-1">
             <Check className="size-4" />
             Accept
@@ -162,6 +170,7 @@ export default function TradeDetailPage({ params }: { params: Promise<{ tradeId:
 
       <section
         id="chat"
+        data-tour="trade-chat"
         className="flex h-[28rem] max-h-[65vh] min-h-0 scroll-mt-4 flex-col overflow-hidden rounded-xl bg-card ring-1 ring-border"
       >
         <div className="flex items-center gap-2 border-b border-border px-3 py-2.5">

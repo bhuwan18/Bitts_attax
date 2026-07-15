@@ -1,5 +1,6 @@
 import { HomeGreeting } from "@/components/home/HomeGreeting";
 import { HomeDashboard } from "@/components/home/HomeDashboard";
+import { TourAutoStart } from "@/components/tour/TourAutoStart";
 
 // Deliberately not an async Server Component. Calling supabase.auth.getUser()
 // here (as this page used to, only to read a display name) makes the route
@@ -16,6 +17,7 @@ import { HomeDashboard } from "@/components/home/HomeDashboard";
 export default function HomePage() {
   return (
     <div className="mx-auto max-w-5xl">
+      <TourAutoStart tourId="home-welcome" />
       <HomeGreeting />
       <HomeDashboard />
     </div>
